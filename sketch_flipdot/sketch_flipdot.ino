@@ -154,7 +154,7 @@ uint8_t font3x5[][3] = {
 // Set or clear a pixel at coordinates (col, row)
 void setPixel(uint8_t col, uint8_t row, bool on)
 {
-  if ((col < 0) || (col > (PANEL_WIDTH - 1)) || (row < 0) || (row > (PANEL_HEIGHT - 1))) return;
+  if ((col < 0) || (col > (PANEL_WIDTH * PANEL_NUMBER - 1)) || (row < 0) || (row > (PANEL_HEIGHT - 1))) return;
   
   // Translate pixel coordinates to row and column address
   // This is necessary because the FP2800A chip skips the
@@ -399,20 +399,20 @@ void loop()
 #endif
 
 #ifdef TEST2_ALL_ON_OFF
-  fillRect(0, 0, (PANEL_WIDTH - 1), (PANEL_HEIGHT - 1), true);
+  fillRect(0, 0, (PANEL_WIDTH * PANEL_NUMBER - 1), (PANEL_HEIGHT - 1), true);
   delay(4000);
-  fillRect(0, 0, (PANEL_WIDTH - 1), (PANEL_HEIGHT - 1), false);
+  fillRect(0, 0, (PANEL_WIDTH * PANEL_NUMBER - 1), (PANEL_HEIGHT - 1), false);
   delay(4000);
 #endif
 
 #ifdef TEST3_RANDOM_PIXELS
-  setPixel(random(1, PANEL_WIDTH), random(1, PANEL_HEIGHT), random(0, 2));
+  setPixel(random(1, (PANEL_WIDTH * PANEL_NUMBER)), random(1, PANEL_HEIGHT), random(0, 2));
 #endif
 
 #ifdef TEST4_BOUNCING_BALL
   px += dx;
   py += dy;
-  if (px == PANEL_WIDTH) dx = -dx;
+  if (px == (PANEL_WIDTH * PANEL_NUMBER)) dx = -dx;
   if (px == 0)  dx = -dx;
   if (py == PANEL_HEIGHT-1) dy = -dy;
   if (py == 0)  dy = -dy;
