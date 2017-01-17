@@ -4,45 +4,60 @@
 // Connection to Arduino MEGA 1280
 // PA --- row
 // PC --- columns
+// PL --- Panel selection
 // 
 // Arduino MEGA 1280 | Flip Dot Display
-// Port Name | Pin-# | Pin-# | Signal FP2800A
-// ----------+-------+-------|---------------
-//   PA0     |   22  |    9  | Row_A0
-//   PA1     |   23  |   10  | Row_A1
-//   PA2     |   24  |   11  | Row_A2
-//   PA3     |   25  |   12  | Row_B0
-//   PA4     |   26  |   13  | Row_B1
-//   PA5     |  n.c. |
-//   PA6     |   28  |   22  | Row_Enable_on 
-//   PA7     |   29  |   23  | Row_Enable_off
-//   PC0     |   37  |    4  | Col_A0
-//   PC1     |   36  |    5  | Col_A1
-//   PC2     |   35  |    6  | Col_A2
-//   PC3     |   34  |    7  | Col_B0
-//   PC4     |   33  |    8  | Col_B1
-//   PC5     |   32  |   21  | Col_Data
-//   PC6     |   31  |   31  | Col_Enable
-//   PC7     |  n.c. |
-//           |       | 15,32 | VS ------------ 10 V DC
-//           |       | 16,17 | GND------------ GND
-//           |       | 33,34 | GND------------ GND
-//    5V     |       |  3,20 | Vcc
-//   GND     |       |  1,2  | GND
-//   GND     |       | 18,19 | GND
+// Port Name | Pin-# | Pin-# | Pin-# | Signal FP2800A
+//           |       |  old  |  new  |
+// ----------+-------|-----------------------
+//   PA0     |   22  |    9  |   17  | Row_A0
+//   PA1     |   23  |   10  |   19  | Row_A1
+//   PA2     |   24  |   11  |   21  | Row_A2
+//   PA3     |   25  |   12  |   23  | Row_B0
+//   PA4     |   26  |   13  |   25  | Row_B1
+//   PA5     |  n.c. |                
+//   PA6     |   28  |   22  |   10  | Row_Enable_on 
+//   PA7     |   29  |   23  |   12  | Row_Enable_off
+//   PC0     |   37  |    4  |    7  | Col_A0
+//   PC1     |   36  |    5  |    9  | Col_A1
+//   PC2     |   35  |    6  |   11  | Col_A2
+//   PC3     |   34  |    7  |   13  | Col_B0
+//   PC4     |   33  |    8  |   15  | Col_B1
+//   PC5     |   32  |   21  |    8  | Col_Data
+//   PC6     |  n.c.                  
+//   PC7     |  n.c.                  
+//   PL0     |   49  |   31  |   28  | Col_Enable Panel 1
+//   PL1     |   48  |   30  |   26  | Col_Enable Panel 2
+//   PL2     |   47  |   29  |   24  | Col_Enable Panel 3
+//   PL3     |   46  |   28  |   22  | Col_Enable Panel 4
+//   PL4     |   45  |   27  |   20  | Col_Enable Panel 5
+//   PL5     |   44  |   26  |   18  | Col_Enable Panel 6
+//   PL6     |   43  |   25  |   16  | Col_Enable Panel 7
+//   PL7     |   42  |   24  |   14  | Col_Enable Panel 8
+//           |       | 15,32 | 29,30 | VS ------------ 10 V DC
+//           |       | 16,17 | 31,33 | GND------------ GND
+//           |       | 33,34 | 32,34 | GND------------ GND
+//    5V     |       |  3,20 |  5,6  | Vcc
+//   GND     |       |  1,2  |  1,3  | GND
+//   GND     |       | 18,19 |  2,4  | GND
 
-#define TEST2_ALL_ON_OFF
+#define PANEL_WIDTH     28 // single Panel width in pixel
+#define PANEL_HEIGHT    24 // single Panel height in pixel
+#define PANEL_NUMBER     3 // Number of connected Panels
+
+//#define TEST2_ALL_ON_OFF
 //#define TEST3_RANDOM_PIXELS
 //#define TEST4_BOUNCING_BALL
 //#define TEST6_SIERPINSKY
 //#define TEST7_LETTERS
-//#define TEST8_LAPCOUNTER
+#define TEST8_LAPCOUNTER
 
-char pixels[28][28];
+char pixels[PANEL_WIDTH*PANEL_NUMBER][PANEL_HEIGHT];
 int px, py;
 int dx, dy;
 int oldx, oldy;
 uint8_t coord_to_row_col[28] = {1,2,3,4,5,6,7,9,10,11,12,13,14,15,17,18,19,20,21,22,23,25,26,27,28,29,30,31};
+uint8_t panel_to_bits[8] = {1,2,4,8,16,32,64,128};
 uint8_t font5x7[][5] = {
                      {0x3E, 0x45, 0x49, 0x51, 0x3E},  // 0
                      {0x00, 0x21, 0x7F, 0x01, 0x00},  // 1
@@ -139,7 +154,7 @@ uint8_t font3x5[][3] = {
 // Set or clear a pixel at coordinates (col, row)
 void setPixel(uint8_t col, uint8_t row, bool on)
 {
-  if ((col < 0) || (col > 27) || (row < 0) || (row > 23)) return;
+  if ((col < 0) || (col > (PANEL_WIDTH - 1)) || (row < 0) || (row > (PANEL_HEIGHT - 1))) return;
   
   // Translate pixel coordinates to row and column address
   // This is necessary because the FP2800A chip skips the
@@ -163,13 +178,15 @@ void setPixel(uint8_t col, uint8_t row, bool on)
   if (on)
   {
     PORTA |= 0x40;  // Row_Enable_on
-    PORTC |= 0x40;  // Col_Enable
+//    PORTC |= 0x40;  // Col_Enable
   }
   else
   {
     PORTA |= 0x80;  // Row_Enable_off
-    PORTC |= 0x40;  // Col_Enable
+//    PORTC |= 0x40;  // Col_Enable
   }
+  uint8_t panel = panel_to_bits[col/PANEL_WIDTH];
+  PORTL = (panel & 0xFF);  // Col_Enable panel x
   
   // Give the dots time to flip
   delayMicroseconds(600);
@@ -186,7 +203,7 @@ void setPixel(uint8_t col, uint8_t row, bool on)
 //--------------------------------------------------------
 void clearDisplay()
 {
-  fillRect(0, 0, 27, 23, false);
+  fillRect(0, 0, (PANEL_WIDTH * PANEL_NUMBER - 1) , (PANEL_HEIGHT - 1), false);
 }
 
 
@@ -302,7 +319,7 @@ void paddle(int x, int y)
     setPixel(x + i, y, true);
     
   if (x > 0)  setPixel(x - 1, y, false);
-  if (x < 23) setPixel(x + 5, y, false);
+  if (x < (PANEL_WIDTH-1)) setPixel(x + 5, y, false);
 }
 
 void pong()
@@ -314,14 +331,14 @@ void pong()
   
   px += dx;
   py += dy;
-  if (px == 27) dx = -dx;
+  if (px == (PANEL_WIDTH - 1)) dx = -dx;
   if (px == 0)  dx = -dx;
-  if (py == 23) dy = -dy;
+  if (py == (PANEL_HEIGHT - 1)) dy = -dy;
   if (py == 0)  dy = -dy;
   
   setPixel(px, py, true);
   paddle(px, 0);
-  paddle(px, 27);
+  paddle(px, (PANEL_WIDTH - 1));
   delay(10);
 }
 
@@ -330,8 +347,8 @@ void pong()
 // Sierpinsky triangle
 void sier()
 {
-  for (int x = 0;  x < 24;  x++) 
-    for (int y = 0;  y < 24;  y++) 
+  for (int x = 0;  x < PANEL_WIDTH;  x++) 
+    for (int y = 0;  y < PANEL_HEIGHT;  y++) 
       setPixel(x, y, !(x & y));
 }
 
@@ -346,6 +363,7 @@ void setup()
   // Set all pins to LOW
   PORTA = 0x00;
   PORTC = 0x00;
+  PORTL = 0x00;
   
   // Required for the various effects
   dx = 1;
@@ -381,22 +399,22 @@ void loop()
 #endif
 
 #ifdef TEST2_ALL_ON_OFF
-  fillRect(0, 0, 27, 23, true);
+  fillRect(0, 0, (PANEL_WIDTH - 1), (PANEL_HEIGHT - 1), true);
   delay(4000);
-  fillRect(0, 0, 27, 23, false);
+  fillRect(0, 0, (PANEL_WIDTH - 1), (PANEL_HEIGHT - 1), false);
   delay(4000);
 #endif
 
 #ifdef TEST3_RANDOM_PIXELS
-  setPixel(random(1, 28), random(1, 24), random(0, 2));
+  setPixel(random(1, PANEL_WIDTH), random(1, PANEL_HEIGHT), random(0, 2));
 #endif
 
 #ifdef TEST4_BOUNCING_BALL
   px += dx;
   py += dy;
-  if (px == 24) dx = -dx;
+  if (px == PANEL_WIDTH) dx = -dx;
   if (px == 0)  dx = -dx;
-  if (py == 27) dy = -dy;
+  if (py == PANEL_HEIGHT-1) dy = -dy;
   if (py == 0)  dy = -dy;
   if (pixels[px][py] == 0)
   {
