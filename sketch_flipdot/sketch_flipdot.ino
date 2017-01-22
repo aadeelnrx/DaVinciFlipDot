@@ -45,6 +45,8 @@
 #define PANEL_HEIGHT    24 // single Panel height in pixel
 #define PANEL_NUMBER     3 // Number of connected Panels
 
+#define LED_PIN         13
+
 //#define TEST2_ALL_ON_OFF
 //#define TEST3_RANDOM_PIXELS
 //#define TEST4_BOUNCING_BALL
@@ -154,13 +156,19 @@ uint8_t font3x5[][3] = {
 // Set or clear a pixel at coordinates (col, row)
 void setPixel(uint8_t col, uint8_t row, bool on)
 {
-  if ((col < 0) || (col > (PANEL_WIDTH * PANEL_NUMBER - 1)) || (row < 0) || (row > (PANEL_HEIGHT - 1))) return;
-  
+  if ((col < 0) || (col > ((PANEL_WIDTH * PANEL_NUMBER) - 1)) || (row < 0) || (row > (PANEL_HEIGHT - 1))) return;
+
+  // Translate Column to Panel
+  uint8_t panel = col/PANEL_WIDTH; 
+  col = col - (panel * PANEL_WIDTH);
   // Translate pixel coordinates to row and column address
   // This is necessary because the FP2800A chip skips the
   // addresses 0, 8, 16, 24
   row = coord_to_row_col[row];
   col = coord_to_row_col[col];
+  // Translate the panelnumber into correct bits
+  panel = panel_to_bits[panel];
+  
   // Set row address
   PORTA = (row & 0x1F);
   // Set column address
@@ -175,6 +183,7 @@ void setPixel(uint8_t col, uint8_t row, bool on)
   delayMicroseconds(50);
   
   // Set Enable
+  PORTL = (panel & 0xFF);  // Col_Enable panel x
   if (on)
   {
     PORTA |= 0x40;  // Row_Enable_on
@@ -190,10 +199,11 @@ void setPixel(uint8_t col, uint8_t row, bool on)
   
   // Give the dots time to flip
   delayMicroseconds(600);
-  
+    
   // Reset Data and Enable lines
   PORTA &= 0x1F;
   PORTC &= 0x1F;
+  PORTL = 0x00;
   
   // Wait t_off
   delayMicroseconds(150);
@@ -203,7 +213,7 @@ void setPixel(uint8_t col, uint8_t row, bool on)
 //--------------------------------------------------------
 void clearDisplay()
 {
-  fillRect(0, 0, (PANEL_WIDTH * PANEL_NUMBER - 1) , (PANEL_HEIGHT - 1), false);
+  fillRect(0, 0, ((PANEL_WIDTH * PANEL_NUMBER) - 1) , (PANEL_HEIGHT - 1), false);
 }
 
 
@@ -347,7 +357,7 @@ void pong()
 // Sierpinsky triangle
 void sier()
 {
-  for (int x = 0;  x < PANEL_WIDTH;  x++) 
+  for (int x = 0;  x < (PANEL_WIDTH * PANEL_NUMBER);  x++) 
     for (int y = 0;  y < PANEL_HEIGHT;  y++) 
       setPixel(x, y, !(x & y));
 }
@@ -357,9 +367,10 @@ void sier()
 //--------------------------------------------------------
 void setup()
 {
-  // Port A and C = output
+  // Port A, C & L = output
   DDRA = 0xFF;
   DDRC = 0xFF;
+  DDRL = 0xFF;
   // Set all pins to LOW
   PORTA = 0x00;
   PORTC = 0x00;
@@ -372,7 +383,10 @@ void setup()
   py = 2;
   oldx = 0;
   oldy = 0;
-  
+
+  // initialize the digital pin as an output.
+  pinMode(LED_PIN, OUTPUT);     
+
   // Clear the display
   clearDisplay();
 }
@@ -399,9 +413,11 @@ void loop()
 #endif
 
 #ifdef TEST2_ALL_ON_OFF
-  fillRect(0, 0, (PANEL_WIDTH * PANEL_NUMBER - 1), (PANEL_HEIGHT - 1), true);
+  fillRect(0, 0, ((PANEL_WIDTH * PANEL_NUMBER) - 1), (PANEL_HEIGHT - 1), true);
+  digitalWrite(LED_PIN, HIGH);   // turn the LED on (HIGH is the voltage level)
   delay(4000);
-  fillRect(0, 0, (PANEL_WIDTH * PANEL_NUMBER - 1), (PANEL_HEIGHT - 1), false);
+  fillRect(0, 0, ((PANEL_WIDTH * PANEL_NUMBER) - 1), (PANEL_HEIGHT - 1), false);
+  digitalWrite(LED_PIN, LOW);    // turn the LED off by making the voltage LOW
   delay(4000);
 #endif
 
@@ -412,7 +428,7 @@ void loop()
 #ifdef TEST4_BOUNCING_BALL
   px += dx;
   py += dy;
-  if (px == (PANEL_WIDTH * PANEL_NUMBER)) dx = -dx;
+  if (px == (PANEL_WIDTH * PANEL_NUMBER)-1) dx = -dx;
   if (px == 0)  dx = -dx;
   if (py == PANEL_HEIGHT-1) dy = -dy;
   if (py == 0)  dy = -dy;
