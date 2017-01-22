@@ -194,8 +194,6 @@ void setPixel(uint8_t col, uint8_t row, bool on)
     PORTA |= 0x80;  // Row_Enable_off
 //    PORTC |= 0x40;  // Col_Enable
   }
-  uint8_t panel = panel_to_bits[col/PANEL_WIDTH];
-  PORTL = (panel & 0xFF);  // Col_Enable panel x
   
   // Give the dots time to flip
   delayMicroseconds(600);
