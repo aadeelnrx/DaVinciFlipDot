@@ -52,7 +52,8 @@
 //#define TEST4_BOUNCING_BALL
 //#define TEST6_SIERPINSKY
 //#define TEST7_LETTERS
-#define TEST8_LAPCOUNTER
+//#define TEST8_LAPCOUNTER
+#define TEST9_SERIAL
 
 char pixels[PANEL_WIDTH*PANEL_NUMBER][PANEL_HEIGHT];
 int px, py;
@@ -151,6 +152,10 @@ uint8_t font3x5[][3] = {
                      {0x10, 0x0F, 0x10},  // Y
                      {0x45, 0x49, 0x51},  // Z
 };
+
+int cmd_buffer_max = 100;
+int cmd_buffer_index = 0;
+char cmd_buffer[100];
 
 //--------------------------------------------------------------
 // Set or clear a pixel at coordinates (col, row)
@@ -393,10 +398,17 @@ void setup()
   // initialize the digital pin as an output.
   pinMode(LED_PIN, OUTPUT);     
 
+  // Serial 1 is the command port
+  Serial1.begin(9600);
+  
   // Fill the display
+  Serial1.write("Fill Display\r\n");
   fillDisplay();
   // Clear the display
+  Serial1.write("Clear Display\r\n");
   clearDisplay();
+  
+  Serial1.write("Ready.\r\n");
 }
 
 
@@ -593,6 +605,40 @@ void loop()
   
   while(1);
   delay(5000);
+#endif
+
+
+#ifdef TEST9_SERIAL
+  while (Serial1.available())
+  {
+    cmd_buffer[cmd_buffer_index] = Serial1.read();
+    Serial1.write(cmd_buffer[cmd_buffer_index]);
+    if ((cmd_buffer[cmd_buffer_index] == '\n') || (cmd_buffer[cmd_buffer_index] == '\r'))
+    {
+      // Line received, process command
+      if ((cmd_buffer[0] == 'T') && (cmd_buffer_index > 4))
+      {
+        Serial1.write("Print Text\r\n");
+        printLetter5x7(cmd_buffer[1],  0, 0);
+        printLetter5x7(cmd_buffer[2],  6, 0);
+        printLetter5x7(cmd_buffer[3], 12, 0);
+        printLetter5x7(cmd_buffer[4], 18, 0);
+      }
+      else if (cmd_buffer[0] == 'C')
+      {
+        Serial1.write("Clear Display\r\n");
+        clearDisplay(); 
+      }
+      cmd_buffer_index = 0;
+    }
+    else // command not complete
+    {
+      if (cmd_buffer_index < cmd_buffer_max - 1)
+      {
+        cmd_buffer_index++;
+      }
+    }
+  } // while Serial1.available()
 #endif
 
 }
