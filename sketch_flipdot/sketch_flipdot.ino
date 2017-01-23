@@ -157,6 +157,8 @@ uint8_t font3x5[][3] = {
 void setPixel(uint8_t col, uint8_t row, bool on)
 {
   if ((col < 0) || (col > ((PANEL_WIDTH * PANEL_NUMBER) - 1)) || (row < 0) || (row > (PANEL_HEIGHT - 1))) return;
+  if (pixels[col][row] == on) return;  //saving time on switching pixels already in the correct state
+  pixels[col][row] = on;
 
   // Translate Column to Panel
   uint8_t panel = col/PANEL_WIDTH; 
@@ -212,6 +214,12 @@ void setPixel(uint8_t col, uint8_t row, bool on)
 void clearDisplay()
 {
   fillRect(0, 0, ((PANEL_WIDTH * PANEL_NUMBER) - 1) , (PANEL_HEIGHT - 1), false);
+}
+
+//--------------------------------------------------------
+void fillDisplay()
+{
+  fillRect(0, 0, ((PANEL_WIDTH * PANEL_NUMBER) - 1) , (PANEL_HEIGHT - 1), true);
 }
 
 
@@ -385,6 +393,8 @@ void setup()
   // initialize the digital pin as an output.
   pinMode(LED_PIN, OUTPUT);     
 
+  // Fill the display
+  fillDisplay();
   // Clear the display
   clearDisplay();
 }
@@ -411,10 +421,12 @@ void loop()
 #endif
 
 #ifdef TEST2_ALL_ON_OFF
-  fillRect(0, 0, ((PANEL_WIDTH * PANEL_NUMBER) - 1), (PANEL_HEIGHT - 1), true);
+  // Fill the display
+  fillDisplay();
   digitalWrite(LED_PIN, HIGH);   // turn the LED on (HIGH is the voltage level)
   delay(4000);
-  fillRect(0, 0, ((PANEL_WIDTH * PANEL_NUMBER) - 1), (PANEL_HEIGHT - 1), false);
+  // Clear the display
+  clearDisplay();
   digitalWrite(LED_PIN, LOW);    // turn the LED off by making the voltage LOW
   delay(4000);
 #endif
@@ -474,7 +486,7 @@ void loop()
   printLetter5x7('>', 12,  0);
   printLetter5x7('?', 18,  0);
   
-  fillRect(0, 8, 27, 23, false);
+  fillRect(0, 8, (PANEL_WIDTH - 1), (PANEL_HEIGHT - 1), false);
   printLetter5x7('@',  0,  8);
   
   delay(5000);
