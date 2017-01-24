@@ -43,7 +43,9 @@
 
 #define PANEL_WIDTH     28 // single Panel width in pixel
 #define PANEL_HEIGHT    24 // single Panel height in pixel
-#define PANEL_NUMBER     3 // Number of connected Panels
+#define PANEL_NUMBER     1 // Number of connected Panels
+#define PIXELS_WIDTH (PANEL_WIDTH * PANEL_NUMBER)
+#define PIXELS_HEIGHT PANEL_HEIGHT
 
 #define LED_PIN         13
 
@@ -59,6 +61,8 @@ char pixels[PANEL_WIDTH*PANEL_NUMBER][PANEL_HEIGHT];
 int px, py;
 int dx, dy;
 int oldx, oldy;
+#define PIXEL_PER_CHAR_5x7 6
+#define PIXEL_PER_CHAR_3x5 4
 uint8_t coord_to_row_col[28] = {1,2,3,4,5,6,7,9,10,11,12,13,14,15,17,18,19,20,21,22,23,25,26,27,28,29,30,31};
 uint8_t panel_to_bits[8] = {1,2,4,8,16,32,64,128};
 uint8_t font5x7[][5] = {
@@ -209,6 +213,8 @@ uint8_t font3x5[][3] = {
 int cmd_buffer_max = 100;
 int cmd_buffer_index = 0;
 char cmd_buffer[100];
+int pos_x = 0;  // x-coordinate to where the next command prints
+int pos_y = 0;  // y-coordinate to where the next command prints
 
 //--------------------------------------------------------------
 // Set or clear a pixel at coordinates (col, row)
@@ -464,6 +470,15 @@ void setup()
   clearDisplay();
   
   Serial1.write("Ready.\r\n");
+  
+#ifdef TEST9_SERIAL
+  Serial1.println("Commands (press Enter after the command):");
+  Serial1.println("C       Clear Screen");
+  Serial1.println("G10,5   Goto x = 10, y = 5");
+  Serial1.println("TAlex   Text 'Alex' at current position");
+  Serial1.println("");
+#endif
+
 }
 
 
@@ -703,20 +718,8 @@ void loop()
     Serial1.write(cmd_buffer[cmd_buffer_index]);
     if ((cmd_buffer[cmd_buffer_index] == '\n') || (cmd_buffer[cmd_buffer_index] == '\r'))
     {
-      // Line received, process command
-      if ((cmd_buffer[0] == 'T') && (cmd_buffer_index > 4))
-      {
-        Serial1.write("Print Text\r\n");
-        printLetter5x7(cmd_buffer[1],  0, 0);
-        printLetter5x7(cmd_buffer[2],  6, 0);
-        printLetter5x7(cmd_buffer[3], 12, 0);
-        printLetter5x7(cmd_buffer[4], 18, 0);
-      }
-      else if (cmd_buffer[0] == 'C')
-      {
-        Serial1.write("Clear Display\r\n");
-        clearDisplay(); 
-      }
+      handle_command();
+
       cmd_buffer_index = 0;
     }
     else // command not complete
@@ -730,3 +733,53 @@ void loop()
 #endif
 
 }
+
+
+//-------------------------------------------------------------------------------------------
+void handle_command()
+{
+  // Line received, process command
+  if (cmd_buffer[0] == 'T')
+  {
+    Serial1.write("\nPrint Text\r\n");
+    for (int i = 1;
+         i < min(cmd_buffer_index, 1 + PIXELS_WIDTH / PIXEL_PER_CHAR_5x7);
+         i++)
+    {
+      printLetter5x7(cmd_buffer[i], pos_x + (i-1) * PIXEL_PER_CHAR_5x7, pos_y);
+    }
+  }
+  else if (cmd_buffer[0] == 'C')
+  {
+    Serial1.write("Clear Display\r\n");
+    clearDisplay(); 
+  }
+  else if (cmd_buffer[0] == 'G')
+  {
+    int xpos = 0;
+    int ypos = 0;
+    int idx = 1;
+    while((idx < cmd_buffer_index)
+       && (cmd_buffer[idx] >= '0') && (cmd_buffer[idx] <= '9'))
+    {
+      xpos = 10 * xpos + cmd_buffer[idx] - '0';
+      idx++;
+    }
+    idx++;  // to skip the ','
+    while ((idx < cmd_buffer_index)
+        && (cmd_buffer[idx] >= '0') && (cmd_buffer[idx] <= '9'))
+    {
+      ypos = 10 * ypos + cmd_buffer[idx] - '0';
+      idx++;
+    }
+    pos_x = constrain(xpos - 1, 0, PIXELS_WIDTH - 1);
+    pos_y = constrain(ypos - 1, 0, PIXELS_HEIGHT - 1);
+    Serial1.print("Goto x = ");
+    Serial1.print(pos_x + 1);
+    Serial1.print(", y = ");
+    Serial1.println(pos_y + 1);
+  }
+}
+
+//--------------------------------------------------------------------------------------------
+
