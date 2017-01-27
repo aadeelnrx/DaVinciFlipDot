@@ -165,16 +165,16 @@ uint8_t font5x7[][5] = {
 };
 
 uint8_t font3x5[][3] = {
-                     {0x45, 0x49, 0x51},  // 0
+                     {0x1F, 0x11, 0x1F},  // 0
                      {0x09, 0x7F, 0x01},  // 1
                      {0x17, 0x15, 0x1D},  // 2
-                     {0x49, 0x49, 0x49},  // 3
-                     {0x14, 0x24, 0x7F},  // 4
-                     {0x51, 0x51, 0x51},  // 5
-                     {0x29, 0x49, 0x49},  // 6
-                     {0x47, 0x48, 0x50},  // 7
-                     {0x49, 0x49, 0x49},  // 8
-                     {0x49, 0x49, 0x4A},  // 9
+                     {0x15, 0x15, 0x1F},  // 3
+                     {0x1C, 0x04, 0x1F},  // 4
+                     {0x1D, 0x15, 0x12},  // 5
+                     {0x1F, 0x15, 0x17},  // 6
+                     {0x13, 0x14, 0x1C},  // 7
+                     {0x1F, 0x15, 0x1F},  // 8
+                     {0x1D, 0x15, 0x1F},  // 9
                      {0x1B, 0x1B, 0x00},  // :
                      {0x6D, 0x6E, 0x00},  // ;
                      {0x14, 0x22, 0x41},  // <
@@ -183,38 +183,39 @@ uint8_t font3x5[][3] = {
                      {0x40, 0x45, 0x48},  // ?
                      {0x41, 0x79, 0x49},  // @
                      {0x1F, 0x14, 0x1F},  // A
-                     {0x49, 0x49, 0x49},  // B
-                     {0x41, 0x41, 0x41},  // C
-                     {0x41, 0x41, 0x41},  // D
-                     {0x49, 0x49, 0x49},  // E
-                     {0x48, 0x48, 0x48},  // F
-                     {0x41, 0x45, 0x45},  // G
-                     {0x08, 0x08, 0x08},  // H
-                     {0x41, 0x7F, 0x41},  // I
-                     {0x01, 0x01, 0x01},  // J
-                     {0x08, 0x14, 0x22},  // K
+                     {0x1F, 0x15, 0x0A},  // B
+                     {0x0E, 0x11, 0x11},  // C
+                     {0x1F, 0x11, 0x0E},  // D
+                     {0x1F, 0x15, 0x15},  // E
+                     {0x1F, 0x14, 0x14},  // F
+                     {0x0E, 0x11, 0x17},  // G
+                     {0x1F, 0x04, 0x1F},  // H
+                     {0x00, 0x1F, 0x00},  // I
+                     {0x12, 0x11, 0x1E},  // J
+                     {0x1F, 0x04, 0x1B},  // K
                      {0x1F, 0x01, 0x01},  // L
-                     {0x20, 0x18, 0x20},  // M
-                     {0x10, 0x08, 0x04},  // N
-                     {0x41, 0x41, 0x41},  // O
+                     {0x1F, 0x0C, 0x1F},  // M
+                     {0x1F, 0x0E, 0x1F},  // N
+                     {0x1F, 0x11, 0x1F},  // O
                      {0x1F, 0x14, 0x1C},  // P
-                     {0x41, 0x45, 0x42},  // Q
-                     {0x48, 0x4C, 0x4A},  // R
+                     {0x1F, 0x13, 0x1E},  // Q
+                     {0x1F, 0x16, 0x09},  // R
                      {0x1D, 0x15, 0x17},  // S
-                     {0x40, 0x7F, 0x40},  // T
-                     {0x01, 0x01, 0x01},  // U
-                     {0x0C, 0x03, 0x0C},  // V
-                     {0x02, 0x0C, 0x02},  // W
-                     {0x14, 0x08, 0x14},  // X
-                     {0x10, 0x0F, 0x10},  // Y
-                     {0x45, 0x49, 0x51},  // Z
+                     {0x10, 0x1F, 0x10},  // T
+                     {0x1F, 0x01, 0x1F},  // U
+                     {0x1E, 0x01, 0x1E},  // V
+                     {0x1F, 0x02, 0x1F},  // W
+                     {0x1B, 0x04, 0x1B},  // X
+                     {0x18, 0x07, 0x18},  // Y
+                     {0x13, 0x15, 0x19},  // Z
 };
 
 int cmd_buffer_max = 100;
 int cmd_buffer_index = 0;
 char cmd_buffer[100];
-int pos_x = 0;  // x-coordinate to where the next command prints
-int pos_y = 0;  // y-coordinate to where the next command prints
+int cursor_x = 0;  // x-coordinate to where the next command prints
+int cursor_y = 0;  // y-coordinate to where the next command prints
+int fontID = 5;    // Font to be used.  3 = 3x5, 5 = 5x7
 
 //--------------------------------------------------------------
 // Set or clear a pixel at coordinates (col, row)
@@ -280,6 +281,7 @@ void clearDisplay()
   fillRect(0, 0, ((PANEL_WIDTH * PANEL_NUMBER) - 1) , (PANEL_HEIGHT - 1), false);
 }
 
+
 //--------------------------------------------------------
 void fillDisplay()
 {
@@ -289,53 +291,57 @@ void fillDisplay()
 
 //--------------------------------------------------------
 // Print a letter at (x, y) = top-left corner of the letter
-// A letter takes up 5x7 pixels.
-void printLetter5x7(char character, int x, int y)
+// A letter takes up 5x7 pixels. 
+// Return the width of the letter in pixels.
+int printLetter5x7(char character, int x, int y)
 {
-//  if ((character >= '0')  && (character <= '['))
-//  {
-//    uint8_t* letter = font5x7[character - '0'];
-    uint8_t* letter = font5x7[character - '!' + 1];
-   
-    // Go through the 5 columns of the letter
-    for (int col = 0;  col < 5;  col++)
+  uint8_t* letter = font5x7[character - '!' + 1];
+ 
+  // Go through the 5 columns of the letter
+  for (int col = 0;  col < 5;  col++)
+  {
+    uint8_t bits = letter[col];
+    // Go through the pixels of the letter
+    for (int row = 6;  row >= 0;  row--)
     {
-      uint8_t bits = letter[col];
-      // Go through the pixels of the letter
-      for (int row = 6;  row >= 0;  row--)
-      {
-        uint8_t pixel = bits & 0x01;
-        bits >>= 1;
-//        setPixel(x + col, y + row, pixel);
-        setPixel(x + col, 7 + y - row, pixel);
-      }
+      uint8_t pixel = bits & 0x01;
+      bits >>= 1;
+      setPixel(x + col, 7 + y - row, pixel);
     }
-//  }
+  }
+  return PIXEL_PER_CHAR_5x7;
 }
+
 
 //--------------------------------------------------------
 // Print a letter at (x, y) = top-left corner of the letter
 // A letter takes up 3x5 pixels.
-void printLetter3x5(char character, int x, int y)
+int printLetter3x5(char character, int x, int y)
 {
-  if ((character >= '0')  && (character <= 'Z'))
-  {
-    uint8_t* letter = font3x5[character - '0'];
+  // convert lower case to upper case
+//  if ((character >= 'a')  && (character <= 'z'))
+//  {
+//    character -= 'a' + 'A';
+//  }
+  character = toupper(character);
+  uint8_t* letter = font3x5[character - '0'];
     
-    // Go through the 3 columns of the letter
-    for (int col = 0;  col < 3;  col++)
+  // Go through the 3 columns of the letter
+  for (int col = 0;  col < 3;  col++)
+  {
+    uint8_t bits = letter[col];
+    // Go through the pixels of the letter
+    for (int row = 4;  row >= 0;  row--)
     {
-      uint8_t bits = letter[col];
-      // Go through the pixels of the letter
-      for (int row = 4;  row >= 0;  row--)
-      {
-        uint8_t pixel = bits & 0x01;
-        bits >>= 1;
-        setPixel(x + col, y + row, pixel);
-      }
+      uint8_t pixel = bits & 0x01;
+      bits >>= 1;
+      setPixel(x + col, y + row, pixel);
     }
   }
+
+  return PIXEL_PER_CHAR_3x5;
 }
+
 
 //--------------------------------------------------------
 void fillRect(int x1, int y1, int x2, int y2, bool on)
@@ -344,6 +350,7 @@ void fillRect(int x1, int y1, int x2, int y2, bool on)
     for (int x = x1;  x <= x2;  x++)
       setPixel(x, y, on);
 }
+
 
 //--------------------------------------------------------
 void drawRect(int x1, int y1, int x2, int y2, bool on)
@@ -460,7 +467,7 @@ void setup()
   pinMode(LED_PIN, OUTPUT);     
 
   // Serial 1 is the command port
-  Serial1.begin(9600);
+  Serial1.begin(115200);
   
   // Fill the display
   Serial1.write("Fill Display\r\n");
@@ -472,11 +479,7 @@ void setup()
   Serial1.write("Ready.\r\n");
   
 #ifdef TEST9_SERIAL
-  Serial1.println("Commands (press Enter after the command):");
-  Serial1.println("C       Clear Screen");
-  Serial1.println("G10,5   Goto x = 10, y = 5");
-  Serial1.println("TAlex   Text 'Alex' at current position");
-  Serial1.println("");
+  printHelp();
 #endif
 
 }
@@ -716,13 +719,21 @@ void loop()
   {
     cmd_buffer[cmd_buffer_index] = Serial1.read();
     Serial1.write(cmd_buffer[cmd_buffer_index]);
-    if ((cmd_buffer[cmd_buffer_index] == '\n') || (cmd_buffer[cmd_buffer_index] == '\r'))
+    // Empty line?
+    if (((cmd_buffer[cmd_buffer_index] == '\n') || (cmd_buffer[cmd_buffer_index] == '\r'))
+       && (cmd_buffer_index == 0))
+    {
+      // nothing, ignore empty line
+    }
+    // Command complete?
+    else if ((cmd_buffer[cmd_buffer_index] == '\n') || (cmd_buffer[cmd_buffer_index] == '\r'))
     {
       handle_command();
 
       cmd_buffer_index = 0;
     }
-    else // command not complete
+    // Command not complete
+    else
     {
       if (cmd_buffer_index < cmd_buffer_max - 1)
       {
@@ -736,50 +747,296 @@ void loop()
 
 
 //-------------------------------------------------------------------------------------------
+// Process a command that was received in cmd_buffer and consists of
+// comd_buffer_index characters
 void handle_command()
 {
-  // Line received, process command
-  if (cmd_buffer[0] == 'T')
+  //-----------------------------------------
+  if (cmd_buffer[0] == '?')
+  {
+    printHelp();
+  }
+
+  //-----------------------------------------
+  // 3<string>  = Text at the current cursor position, use 3x5 font
+  // g0,0
+  // 3ALEX
+  else if (cmd_buffer[0] == '3')
+  {
+    Serial1.write("\nPrint Text 3x5\r\n");
+    for (int i = 1;
+         i < min(cmd_buffer_index, 1 + PIXELS_WIDTH / PIXEL_PER_CHAR_3x5);
+         i++)
+    {
+      cursor_x += printLetter3x5(cmd_buffer[i], cursor_x, cursor_y);
+    }
+  }
+
+  //-----------------------------------------
+  // 5<string>  = Text at the current cursor position, use 5x7 font
+  // g0,8
+  // 5Alex
+  else if (cmd_buffer[0] == '5')
   {
     Serial1.write("\nPrint Text\r\n");
     for (int i = 1;
          i < min(cmd_buffer_index, 1 + PIXELS_WIDTH / PIXEL_PER_CHAR_5x7);
          i++)
     {
-      printLetter5x7(cmd_buffer[i], pos_x + (i-1) * PIXEL_PER_CHAR_5x7, pos_y);
+      cursor_x += printLetter5x7(cmd_buffer[i], cursor_x, cursor_y);
     }
   }
+
+  //-----------------------------------------
+  // C  = Clear Display
+  // g0,0
+  // 5TEST
+  // C
   else if (cmd_buffer[0] == 'C')
   {
     Serial1.write("Clear Display\r\n");
-    clearDisplay(); 
+    clearDisplay();
+    cursor_x = 0;
+    cursor_y = 0;
   }
-  else if (cmd_buffer[0] == 'G')
+
+  //-----------------------------------------
+  // d  = Print Dimensions  d<int>,<int>
+  // d
+  else if (cmd_buffer[0] == 'd')
   {
-    int xpos = 0;
-    int ypos = 0;
-    int idx = 1;
-    while((idx < cmd_buffer_index)
-       && (cmd_buffer[idx] >= '0') && (cmd_buffer[idx] <= '9'))
-    {
-      xpos = 10 * xpos + cmd_buffer[idx] - '0';
-      idx++;
-    }
-    idx++;  // to skip the ','
-    while ((idx < cmd_buffer_index)
-        && (cmd_buffer[idx] >= '0') && (cmd_buffer[idx] <= '9'))
-    {
-      ypos = 10 * ypos + cmd_buffer[idx] - '0';
-      idx++;
-    }
-    pos_x = constrain(xpos - 1, 0, PIXELS_WIDTH - 1);
-    pos_y = constrain(ypos - 1, 0, PIXELS_HEIGHT - 1);
-    Serial1.print("Goto x = ");
-    Serial1.print(pos_x + 1);
-    Serial1.print(", y = ");
-    Serial1.println(pos_y + 1);
+    Serial1.print("d");
+    Serial1.print(PIXELS_WIDTH);
+    Serial1.print(",");
+    Serial1.println(PIXELS_HEIGHT);
   }
+
+  //-----------------------------------------
+  // f<x1>,<y1>,<x2>,<y2>  = Fill Rectangle Area
+  // C
+  // f4,4,15,15
+  else if (cmd_buffer[0] == 'f')
+  {
+    int idx = 1;
+    int x1 = readNumber(&idx);
+    x1 = constrain(x1, 0, PIXELS_WIDTH - 1);
+    idx++;  // to skip the ','
+    int y1 = readNumber(&idx);
+    y1 = constrain(y1, 0, PIXELS_HEIGHT - 1);
+    idx++;  // to skip the ','
+    int x2 = readNumber(&idx);
+    x2 = constrain(x2, x1, PIXELS_WIDTH - 1);
+    idx++;  // to skip the ','
+    int y2 = readNumber(&idx);
+    y2 = constrain(y2, y1, PIXELS_HEIGHT - 1);
+    fillRect(x1, y1, x2, y2, true);
+  }
+
+  //-----------------------------------------
+  // F<x1>,<y1>,<x2>,<y2>  = Erase Rectangle Area
+  // C
+  // f4,4,15,15
+  // F4,4,15,15
+  else if (cmd_buffer[0] == 'F')
+  {
+    int idx = 1;
+    int x1 = readNumber(&idx);
+    x1 = constrain(x1, 0, PIXELS_WIDTH - 1);
+    idx++;  // to skip the ','
+    int y1 = readNumber(&idx);
+    y1 = constrain(y1, 0, PIXELS_HEIGHT - 1);
+    idx++;  // to skip the ','
+    int x2 = readNumber(&idx);
+    x2 = constrain(x2, x1, PIXELS_WIDTH - 1);
+    idx++;  // to skip the ','
+    int y2 = readNumber(&idx);
+    y2 = constrain(y2, y1, PIXELS_HEIGHT - 1);
+    fillRect(x1, y1, x2, y2, false);
+  }
+
+  //-----------------------------------------
+  // g<x>,<y>  = GotoXY
+  // g8,10
+  // 58,10
+  // Invalid numbers result in 0
+  // Too large or too small numbers are limited to the display size.
+  else if (cmd_buffer[0] == 'g')
+  {
+    int idx = 1;
+    int xpos = readNumber(&idx);
+    idx++;  // to skip the ','
+    int ypos = readNumber(&idx);
+    cursor_x = constrain(xpos, 0, PIXELS_WIDTH - 1);
+    cursor_y = constrain(ypos, 0, PIXELS_HEIGHT - 1);
+    Serial1.print("Goto x = ");
+    Serial1.print(cursor_x);
+    Serial1.print(", y = ");
+    Serial1.println(cursor_y);
+  }
+
+  //------------------------------------------
+  // p<x>,<y>  = Set Pixel at x1,y1
+  // C
+  // p0,0
+  // p12,12
+  // p13,13
+  // p14,14
+  else if (cmd_buffer[0] == 'p')
+  {
+    int idx = 1;
+    int xpos = readNumber(&idx);
+    idx++;  // to skip the ','
+    int ypos = readNumber(&idx);
+    cursor_x = constrain(xpos, 0, PIXELS_WIDTH - 1);
+    cursor_y = constrain(ypos, 0, PIXELS_HEIGHT - 1);
+    setPixel(xpos, ypos, true);
+  }
+
+  //------------------------------------------
+  // P<x>,<y>  = Clear Pixel at x1,y1
+  // C
+  // f0,0,20,20
+  // P13,13
+  // P0,0
+  else if (cmd_buffer[0] == 'P')
+  {
+    int idx = 1;
+    int xpos = readNumber(&idx);
+    idx++;  // to skip the ','
+    int ypos = readNumber(&idx);
+    cursor_x = constrain(xpos, 0, PIXELS_WIDTH - 1);
+    cursor_y = constrain(ypos, 0, PIXELS_HEIGHT - 1);
+    setPixel(xpos, ypos, false);
+  }
+
+  //-----------------------------------------
+  // r<x1>,<y1>,<x2>,<y2>  = Draw Rectangle (not filled)
+  // C
+  // r4,4,15,15
+  else if (cmd_buffer[0] == 'r')
+  {
+    int idx = 1;
+    int x1 = readNumber(&idx);
+    x1 = constrain(x1, 0, PIXELS_WIDTH - 1);
+    idx++;  // to skip the ','
+    int y1 = readNumber(&idx);
+    y1 = constrain(y1, 0, PIXELS_HEIGHT - 1);
+    idx++;  // to skip the ','
+    int x2 = readNumber(&idx);
+    x2 = constrain(x2, x1, PIXELS_WIDTH - 1);
+    idx++;  // to skip the ','
+    int y2 = readNumber(&idx);
+    y2 = constrain(y2, y1, PIXELS_HEIGHT - 1);
+    drawRect(x1, y1, x2, y2, true);
+  }
+
+  //-----------------------------------------
+  // R<x1>,<y1>,<x2>,<y2>  = Erase Rectangle (not filled)
+  // C
+  // f4,4,15,15
+  // R5,5,14,14
+  else if (cmd_buffer[0] == 'R')
+  {
+    int idx = 1;
+    int x1 = readNumber(&idx);
+    x1 = constrain(x1, 0, PIXELS_WIDTH - 1);
+    idx++;  // to skip the ','
+    int y1 = readNumber(&idx);
+    y1 = constrain(y1, 0, PIXELS_HEIGHT - 1);
+    idx++;  // to skip the ','
+    int x2 = readNumber(&idx);
+    x2 = constrain(x2, x1, PIXELS_WIDTH - 1);
+    idx++;  // to skip the ','
+    int y2 = readNumber(&idx);
+    y2 = constrain(y2, y1, PIXELS_HEIGHT - 1);
+    drawRect(x1, y1, x2, y2, false);
+  }
+
+  //------------------------------------------
+  // s<fontID>  = Set Font ID (3 = 3x5, 5 = 5x7)
+  // An illegal font-ID does not change the font-ID
+  // C
+  // s3
+  // t3X5
+  // g0,8
+  // s5
+  // t5x7
+  else if (cmd_buffer[0] == 's')
+  {
+    int idx = 1;
+    int id = readNumber(&idx);
+    if ((id == 3) || (id == 5))
+    {
+      fontID = id;
+    }
+    // otherwise no change
+  }
+
+  //-----------------------------------------
+  // t<string>  = Text at the current cursor position, use current font
+  // C
+  // s3
+  // tALEX
+  // s5
+  // g5,10
+  // talx
+  else if (cmd_buffer[0] == 't')
+  {
+    for (int i = 1;
+         ((i < cmd_buffer_index) && (cursor_x < PIXELS_WIDTH - PIXEL_PER_CHAR_3x5));
+         i++)
+    {
+      if (fontID == 3)
+      {
+        cursor_x += printLetter3x5(cmd_buffer[i], cursor_x, cursor_y);
+
+      }
+      else if (fontID == 5)
+      {
+        cursor_x += printLetter5x7(cmd_buffer[i], cursor_x, cursor_y);
+      }
+    }
+  }
+  Serial1.println();
 }
 
+
 //--------------------------------------------------------------------------------------------
+// Convert an ASCII-number into an int
+int readNumber(int *index)
+{
+  int number = 0;
+  while((*index < cmd_buffer_index)
+     && (cmd_buffer[*index] >= '0') && (cmd_buffer[*index] <= '9'))
+  {
+    number = 10 * number + cmd_buffer[*index] - '0';
+    (*index)++;
+  }
+  Serial1.print("ReadNumber returns ");
+  Serial1.println(number); 
+  return number;
+}
+
+
+//-------------------------------------------------------------------------------------------
+// Print command help
+void printHelp()
+ {
+    Serial1.println("Commands:");
+    Serial1.println("-----------------------------------------------------------------");
+    Serial1.println("3<string>             = Text at the current cursor position, use 3x5 font");
+    Serial1.println("5<string>             = Text at the current cursor position, use 5x7 font");
+    Serial1.println("C                     = Clear Display");
+    Serial1.println("d                     = Print Dimensions  d<int>,<int>");
+    Serial1.println("f<x1>,<y1>,<x2>,<y2>  = Fill Rectangle Area");
+    Serial1.println("F<x1>,<y1>,<x2>,<y2>  = Erase Rectangle Area");
+    Serial1.println("g<x>,<y>              = GotoXY");
+    Serial1.println("p<x>,<y>              = Set Pixel at x1,y1");
+    Serial1.println("P<x>,<y>              = Clear Pixel at x1,y1");
+    Serial1.println("r<x1>,<y1>,<x2>,<y2>  = Draw Rectangle (not filled)");
+    Serial1.println("R<x1>,<y1>,<x2>,<y2>  = Erase Rectangle (not filled)");
+    Serial1.println("s<fontID>             = Set Font ID (3 = 3x5, 5 = 5x7)");
+    Serial1.println("t<string>             = Text at the current cursor position, use current font");
+    Serial1.println();
+}
 
