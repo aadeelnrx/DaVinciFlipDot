@@ -517,7 +517,7 @@ void loop()
 #endif
 
 #ifdef TEST3_RANDOM_PIXELS
-  setPixel(random(1, (PANEL_WIDTH * PANEL_NUMBER)), random(1, PANEL_HEIGHT), random(0, 2));
+  setPixel(random(0, (PANEL_WIDTH * PANEL_NUMBER)), random(0, PANEL_HEIGHT), random(0, 2));
 #endif
 
 #ifdef TEST4_BOUNCING_BALL
