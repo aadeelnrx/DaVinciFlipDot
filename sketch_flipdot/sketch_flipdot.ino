@@ -529,12 +529,10 @@ void loop()
   if (py == 0)  dy = -dy;
   if (pixels[px][py] == 0)
   {
-      pixels[px][py] = 1;
       setPixel(px, py, 1);
   }
   else
   {
-      pixels[px][py] = 0;
       setPixel(px, py, 0);
   }   
  delay(5);
