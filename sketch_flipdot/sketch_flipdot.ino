@@ -42,13 +42,19 @@
 //   GND     |       | 18,19 |  2,4  | GND
 //
 //   BME280 connected to pin 43/44, digital in/out 20/21, the I2C bus
+//   DS3231 connected to pin 43/44, digital in/out 20/21, the I2C bus
 //
 
+// BME280 Libraries
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
 
+// Date and time functions using a DS3231 RTC connected via I2C and Wire lib
+#include "RTClib.h"
+
+// BME280 Definitions
 //#define BME_SCK 13
 //#define BME_MISO 12
 //#define BME_MOSI 11
@@ -60,6 +66,12 @@ Adafruit_BME280 bme; // I2C
 //Adafruit_BME280 bme(BME_CS); // hardware SPI
 //Adafruit_BME280 bme(BME_CS, BME_MOSI, BME_MISO,  BME_SCK);
 
+// DS3231 Definitions
+RTC_DS3231 rtc;
+
+char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+
+// Panel Definitions
 #define PANEL_WIDTH     28 // single Panel width in pixel
 #define PANEL_HEIGHT    24 // single Panel height in pixel
 #define PANEL_NUMBER     1 // Number of connected Panels
@@ -69,6 +81,7 @@ Adafruit_BME280 bme; // I2C
 #define LED_PIN         13
 
 #define BME
+#define RTC
 //#define TEST2_ALL_ON_OFF
 //#define TEST3_RANDOM_PIXELS
 //#define TEST4_BOUNCING_BALL
@@ -503,6 +516,22 @@ void setup()
   }
 #endif
 
+#ifdef RTC
+  if (! rtc.begin()) {
+    Serial1.println("Couldn't find RTC");
+    while (1);
+  }
+
+  if (rtc.lostPower()) {
+    Serial1.println("RTC lost power, lets set the time!");
+    // following line sets the RTC to the date & time this sketch was compiled
+    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+    // This line sets the RTC with an explicit date & time, for example to set
+    // January 21, 2014 at 3am you would call:
+    // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
+  }
+#endif
+
   Serial1.write("Ready.\r\n");
   
 #ifdef TEST9_SERIAL
@@ -518,6 +547,25 @@ void setup()
 void loop()
 {
   // put your main code here, to run repeatedly:
+
+#ifdef RTC
+  DateTime now = rtc.now();
+    
+  Serial1.print(now.year(), DEC);
+  Serial1.print('/');
+  Serial1.print(now.month(), DEC);
+  Serial1.print('/');
+  Serial1.print(now.day(), DEC);
+  Serial1.print(" (");
+  Serial1.print(daysOfTheWeek[now.dayOfTheWeek()]);
+  Serial1.print(") ");
+  Serial1.print(now.hour(), DEC);
+  Serial1.print(':');
+  Serial1.print(now.minute(), DEC);
+  Serial1.print(':');
+  Serial1.print(now.second(), DEC);
+  Serial1.println();
+#endif
 
 #ifdef BME
   Serial1.print("Temperature = ");
