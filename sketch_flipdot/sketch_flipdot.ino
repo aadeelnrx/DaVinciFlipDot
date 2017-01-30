@@ -40,6 +40,25 @@
 //    5V     |       |  3,20 |  5,6  | Vcc
 //   GND     |       |  1,2  |  1,3  | GND
 //   GND     |       | 18,19 |  2,4  | GND
+//
+//   BME280 connected to pin 43/44, digital in/out 20/21, the I2C bus
+//
+
+#include <Wire.h>
+#include <SPI.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BME280.h>
+
+//#define BME_SCK 13
+//#define BME_MISO 12
+//#define BME_MOSI 11
+//#define BME_CS 10
+
+#define SEALEVELPRESSURE_HPA (1013.25)
+
+Adafruit_BME280 bme; // I2C
+//Adafruit_BME280 bme(BME_CS); // hardware SPI
+//Adafruit_BME280 bme(BME_CS, BME_MOSI, BME_MISO,  BME_SCK);
 
 #define PANEL_WIDTH     28 // single Panel width in pixel
 #define PANEL_HEIGHT    24 // single Panel height in pixel
@@ -49,6 +68,7 @@
 
 #define LED_PIN         13
 
+#define BME
 //#define TEST2_ALL_ON_OFF
 //#define TEST3_RANDOM_PIXELS
 //#define TEST4_BOUNCING_BALL
@@ -476,6 +496,13 @@ void setup()
   Serial1.write("Clear Display\r\n");
   clearDisplay();
   
+#ifdef BME
+  if (!bme.begin()) {
+    Serial1.println("Could not find a valid BME280 sensor, check wiring!");
+//    while (1);
+  }
+#endif
+
   Serial1.write("Ready.\r\n");
   
 #ifdef TEST9_SERIAL
@@ -491,6 +518,28 @@ void setup()
 void loop()
 {
   // put your main code here, to run repeatedly:
+
+#ifdef BME
+  Serial1.print("Temperature = ");
+  Serial1.print(bme.readTemperature());
+  Serial1.println(" *C");
+
+  Serial1.print("Pressure = ");
+
+  Serial1.print(bme.readPressure() / 100.0F);
+  Serial1.println(" hPa");
+
+  Serial1.print("Approx. Altitude = ");
+  Serial1.print(bme.readAltitude(SEALEVELPRESSURE_HPA));
+  Serial1.println(" m");
+
+  Serial1.print("Humidity = ");
+  Serial1.print(bme.readHumidity());
+  Serial1.println(" %");
+
+  Serial1.println();
+#endif
+
 #ifdef TEST1_PIXEL_ON_OFF
   setPixel(1, 1, true);
   setPixel(2, 1, true);
