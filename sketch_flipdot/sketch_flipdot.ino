@@ -443,6 +443,16 @@ int printLetter3x5(char character, int x, int y)
   return PIXEL_PER_CHAR_3x5;
 }
 
+void printString3x5(char string_buffer[100], uint16_t stringLength, int cursor_x, int cursor_y)
+{
+  for (int i = 1;
+       i < min(stringLength + 1, 1 + PIXELS_WIDTH / PIXEL_PER_CHAR_3x5);
+       i++)
+      {
+        cursor_x += printLetter3x5(string_buffer[i-1], cursor_x, cursor_y);
+      }
+}
+
 
 //--------------------------------------------------------
 void fillRect(int x1, int y1, int x2, int y2, bool on)
@@ -617,15 +627,18 @@ void loop()
   // put your main code here, to run repeatedly:
 
 #ifdef RTC
-  if (PANEL_NUMBER > 2)
+  if (PANEL_NUMBER > 3)
   {
-    showDateTime();
+    showDateTime(false);
+  }else if (PANEL_NUMBER > 2)
+  {
+    showDateTime(true);
   }else if (PANEL_NUMBER > 1)
   { 
-    showTime(true);    
+    showTime(false);    
   }else
   {
-    showTime(false); 
+    showTime(true); 
   }
   delay(1000);
 #endif
@@ -1201,7 +1214,89 @@ void printHelp()
 
 //-------------------------------------------------------------------------------------------
 // Show Date and Time centralized on screen
-void showDateTime()
+void showDateTime(bool compressed)
+{
+  String dateString = buildDate();
+  char dateChar[dateString.length() + 1];
+  dateString.toCharArray(dateChar,dateString.length() + 1);
+  if (compressed)
+  {
+    printString3x5(dateChar, dateString.length(), (PIXELS_WIDTH - (dateString.length()*4) )/2, (PIXELS_HEIGHT - 15)/3 );
+  }else
+  {
+    printString5x7(dateChar, dateString.length(), (PIXELS_WIDTH - (dateString.length()*6) )/2, (PIXELS_HEIGHT - 15)/3 );    
+  }
+  
+  String timeString = buildTime(true);
+  char timeChar[timeString.length() + 1];
+  timeString.toCharArray(timeChar,timeString.length() + 1);
+  printString5x7(timeChar, timeString.length(), (PIXELS_WIDTH - (timeString.length()*6))/2, (PIXELS_HEIGHT - 15)/3*2 + 8 );
+}
+
+//-------------------------------------------------------------------------------------------
+// Show Time centralized on screen
+void showTime(bool compressed)
+{
+  String timeString = buildTime(!compressed);
+  char timeChar[timeString.length() + 1];
+  timeString.toCharArray(timeChar,timeString.length() + 1);
+  if (compressed)
+  {
+    printString3x5(timeChar, timeString.length(), (PIXELS_WIDTH - (timeString.length()*4))/2, (PIXELS_HEIGHT - 5)/2 );
+  }else
+  {
+    printString5x7(timeChar, timeString.length(), (PIXELS_WIDTH - (timeString.length()*6))/2, (PIXELS_HEIGHT - 7)/2 );    
+  }
+}
+
+//-------------------------------------------------------------------------------------------
+// Build Time String
+String buildTime(bool seperator)
+{
+  DateTime now = rtc.now();
+
+  Serial1.print(now.hour(), DEC);
+  Serial1.print(':');
+  Serial1.print(now.minute(), DEC);
+  Serial1.print(':');
+  Serial1.print(now.second(), DEC);
+  Serial1.println();
+
+  String timeString;
+  if (now.hour() < 10)
+  {
+    timeString += "0";
+    timeString += String(now.hour());
+  }else
+  {
+    timeString += String(now.hour());
+  }
+  if (seperator) timeString += String(":");
+  
+  if (now.minute() < 10)
+  {
+    timeString += "0";
+    timeString += String(now.minute());
+  }else
+  {
+    timeString += String(now.minute());
+  }
+  if (seperator) timeString += String(":");
+
+  if (now.second() < 10)
+  {
+    timeString += "0";
+    timeString += String(now.second());
+  }else
+  {
+    timeString += String(now.second());
+  }
+  return timeString;
+}
+
+//-------------------------------------------------------------------------------------------
+// Build Date String
+String buildDate()
 {
   DateTime now = rtc.now();
     
@@ -1228,71 +1323,7 @@ void showDateTime()
   dateString += months[now.month()-1];
   dateString += " ";
   dateString += String(now.year());    
-  uint16_t dateStringLength = dateString.length();
-  char dateChar[dateStringLength+1];
-  dateString.toCharArray(dateChar,dateStringLength+1);
-  printString5x7(dateChar, dateStringLength, (PIXELS_WIDTH - (dateStringLength*6) )/2, (PIXELS_HEIGHT - 15)/3 );
-
-  String timeString = buildTime(true);
-  char timeChar[timeString.length() + 1];
-  timeString.toCharArray(timeChar,timeString.length() + 1);
-  printString5x7(timeChar, timeString.length(), (PIXELS_WIDTH - (timeString.length()*6))/2, (PIXELS_HEIGHT - 15)/3*2 + 8 );
+  return dateString;
 }
 
-//-------------------------------------------------------------------------------------------
-// Show Time centralized on screen
-void showTime(bool fullFormat)
-{
-  String timeString = buildTime(fullFormat);
-  char timeChar[timeString.length() + 1];
-  timeString.toCharArray(timeChar,timeString.length() + 1);
-  printString5x7(timeChar, timeString.length(), (PIXELS_WIDTH - (timeString.length()*6))/2, (PIXELS_HEIGHT - 7)/2 );
-}
 
-//-------------------------------------------------------------------------------------------
-// Build Time String
-String buildTime(bool fullFormat)
-{
-  DateTime now = rtc.now();
-
-  Serial1.print(now.hour(), DEC);
-  Serial1.print(':');
-  Serial1.print(now.minute(), DEC);
-  Serial1.print(':');
-  Serial1.print(now.second(), DEC);
-  Serial1.println();
-
-  String timeString;
-  if (now.hour() < 10)
-  {
-    timeString += "0";
-    timeString += String(now.hour());
-  }else
-  {
-    timeString += String(now.hour());
-  }
-  if (fullFormat) timeString += String(":");
-  
-  if (now.minute() < 10)
-  {
-    timeString += "0";
-    timeString += String(now.minute());
-  }else
-  {
-    timeString += String(now.minute());
-  }
-  if (fullFormat)
-  {
-    timeString += String(":");
-
-    if (now.second() < 10)
-    {
-      timeString += "0";
-      timeString += String(now.second());
-    }else
-    {
-      timeString += String(now.second());
-    }
-  }
-  return timeString;
-}
