@@ -69,7 +69,10 @@ Adafruit_BME280 bme; // I2C
 // DS3231 Definitions
 RTC_DS3231 rtc;
 
-char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+//char daysOfTheWeek[7][10] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+//char months[12][10] = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
+char daysOfTheWeek[7][4] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+char months[12][4] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
 // Panel Definitions
 #define PANEL_WIDTH     28 // single Panel width in pixel
@@ -401,6 +404,15 @@ int printLetter5x7(char character, int x, int y)
   return PIXEL_PER_CHAR_5x7;
 }
 
+void printString5x7(char string_buffer[100], uint16_t stringLength, int cursor_x, int cursor_y)
+{
+  for (int i = 1;
+       i < min(stringLength + 1, 1 + PIXELS_WIDTH / PIXEL_PER_CHAR_5x7);
+       i++)
+      {
+        cursor_x += printLetter5x7(string_buffer[i-1], cursor_x, cursor_y);
+      }
+}
 
 //--------------------------------------------------------
 // Print a letter at (x, y) = top-left corner of the letter
@@ -605,22 +617,17 @@ void loop()
   // put your main code here, to run repeatedly:
 
 #ifdef RTC
-  DateTime now = rtc.now();
-    
-  Serial1.print(now.year(), DEC);
-  Serial1.print('/');
-  Serial1.print(now.month(), DEC);
-  Serial1.print('/');
-  Serial1.print(now.day(), DEC);
-  Serial1.print(" (");
-  Serial1.print(daysOfTheWeek[now.dayOfTheWeek()]);
-  Serial1.print(") ");
-  Serial1.print(now.hour(), DEC);
-  Serial1.print(':');
-  Serial1.print(now.minute(), DEC);
-  Serial1.print(':');
-  Serial1.print(now.second(), DEC);
-  Serial1.println();
+  if (PANEL_NUMBER > 2)
+  {
+    showDateTime();
+  }else if (PANEL_NUMBER > 1)
+  { 
+    showTime(true);    
+  }else
+  {
+    showTime(false); 
+  }
+  delay(1000);
 #endif
 
 #ifdef BME
@@ -1191,3 +1198,125 @@ void printHelp()
     Serial1.println();
 }
 
+
+//-------------------------------------------------------------------------------------------
+// Show Date and Time centralized on screen
+void showDateTime()
+{
+  DateTime now = rtc.now();
+    
+  Serial1.print(now.year(), DEC);
+  Serial1.print('/');
+  Serial1.print(now.month(), DEC);
+  Serial1.print('/');
+  Serial1.print(now.day(), DEC);
+  Serial1.print(" (");
+  Serial1.print(daysOfTheWeek[now.dayOfTheWeek()]);
+  Serial1.print(") ");
+  Serial1.print(now.hour(), DEC);
+  Serial1.print(':');
+  Serial1.print(now.minute(), DEC);
+  Serial1.print(':');
+  Serial1.print(now.second(), DEC);
+  Serial1.println();
+
+  String dateString;
+  String timeString;
+  dateString += daysOfTheWeek[now.dayOfTheWeek()];
+  dateString += " ";
+  dateString += String(now.day());
+  dateString += " ";
+  dateString += months[now.month()-1];
+  dateString += " ";
+  dateString += String(now.year());    
+  uint16_t dateStringLength = dateString.length();
+  char dateChar[dateStringLength+1];
+  dateString.toCharArray(dateChar,dateStringLength+1);
+  printString5x7(dateChar, dateStringLength, (PIXELS_WIDTH - (dateStringLength*6) )/2, (PIXELS_HEIGHT - 15)/3 );
+
+  if (now.hour() < 10)
+  {
+    timeString += "0";
+    timeString += String(now.hour());
+  }else
+  {
+    timeString += String(now.hour());
+  }
+  timeString += ":";
+
+  if (now.minute() < 10)
+  {
+    timeString += "0";
+    timeString += String(now.minute());
+  }else
+  {
+    timeString += String(now.minute());
+  }
+  timeString += ":";
+
+  if (now.second() < 10)
+  {
+    timeString += "0";
+    timeString += String(now.second());
+  }else
+  {
+    timeString += String(now.second());
+  }
+  uint16_t timeStringLength = timeString.length();
+  char timeChar[timeStringLength+1];
+  timeString.toCharArray(timeChar,timeStringLength+1);
+  printString5x7(timeChar, timeStringLength, (PIXELS_WIDTH - (timeStringLength*6))/2, (PIXELS_HEIGHT - 15)/3*2 + 8 );
+//  printString5x7(timeChar, timeStringLength, (PIXELS_WIDTH - 48 )/2, (PIXELS_HEIGHT - 15)/3*2 + 8 );
+}
+
+//-------------------------------------------------------------------------------------------
+// Show Time centralized on screen
+void showTime(bool showSeconds)
+{
+  DateTime now = rtc.now();
+
+  Serial1.print(now.hour(), DEC);
+  Serial1.print(':');
+  Serial1.print(now.minute(), DEC);
+  Serial1.print(':');
+  Serial1.print(now.second(), DEC);
+  Serial1.println();
+
+  String timeString;
+  if (now.hour() < 10)
+  {
+    timeString += "0";
+    timeString += String(now.hour());
+  }else
+  {
+    timeString += String(now.hour());
+  }
+  if (showSeconds) timeString += String(":");
+  
+  if (now.minute() < 10)
+  {
+    timeString += "0";
+    timeString += String(now.minute());
+  }else
+  {
+    timeString += String(now.minute());
+  }
+  if (showSeconds)
+  {
+    timeString += String(":");
+
+    if (now.second() < 10)
+    {
+      timeString += "0";
+      timeString += String(now.second());
+    }else
+    {
+      timeString += String(now.second());
+    }
+  }
+  uint16_t timeStringLength = timeString.length();
+  char timeChar[timeStringLength+1];
+  timeString.toCharArray(timeChar,timeStringLength+1);
+  printString5x7(timeChar, timeStringLength, (PIXELS_WIDTH - (timeStringLength*6))/2, (PIXELS_HEIGHT - 7)/2 );
+  
+}
