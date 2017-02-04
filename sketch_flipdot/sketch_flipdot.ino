@@ -1221,7 +1221,6 @@ void showDateTime()
   Serial1.println();
 
   String dateString;
-  String timeString;
   dateString += daysOfTheWeek[now.dayOfTheWeek()];
   dateString += " ";
   dateString += String(now.day());
@@ -1234,44 +1233,25 @@ void showDateTime()
   dateString.toCharArray(dateChar,dateStringLength+1);
   printString5x7(dateChar, dateStringLength, (PIXELS_WIDTH - (dateStringLength*6) )/2, (PIXELS_HEIGHT - 15)/3 );
 
-  if (now.hour() < 10)
-  {
-    timeString += "0";
-    timeString += String(now.hour());
-  }else
-  {
-    timeString += String(now.hour());
-  }
-  timeString += ":";
-
-  if (now.minute() < 10)
-  {
-    timeString += "0";
-    timeString += String(now.minute());
-  }else
-  {
-    timeString += String(now.minute());
-  }
-  timeString += ":";
-
-  if (now.second() < 10)
-  {
-    timeString += "0";
-    timeString += String(now.second());
-  }else
-  {
-    timeString += String(now.second());
-  }
-  uint16_t timeStringLength = timeString.length();
-  char timeChar[timeStringLength+1];
-  timeString.toCharArray(timeChar,timeStringLength+1);
-  printString5x7(timeChar, timeStringLength, (PIXELS_WIDTH - (timeStringLength*6))/2, (PIXELS_HEIGHT - 15)/3*2 + 8 );
-//  printString5x7(timeChar, timeStringLength, (PIXELS_WIDTH - 48 )/2, (PIXELS_HEIGHT - 15)/3*2 + 8 );
+  String timeString = buildTime(true);
+  char timeChar[timeString.length() + 1];
+  timeString.toCharArray(timeChar,timeString.length() + 1);
+  printString5x7(timeChar, timeString.length(), (PIXELS_WIDTH - (timeString.length()*6))/2, (PIXELS_HEIGHT - 15)/3*2 + 8 );
 }
 
 //-------------------------------------------------------------------------------------------
 // Show Time centralized on screen
-void showTime(bool showSeconds)
+void showTime(bool fullFormat)
+{
+  String timeString = buildTime(fullFormat);
+  char timeChar[timeString.length() + 1];
+  timeString.toCharArray(timeChar,timeString.length() + 1);
+  printString5x7(timeChar, timeString.length(), (PIXELS_WIDTH - (timeString.length()*6))/2, (PIXELS_HEIGHT - 7)/2 );
+}
+
+//-------------------------------------------------------------------------------------------
+// Build Time String
+String buildTime(bool fullFormat)
 {
   DateTime now = rtc.now();
 
@@ -1291,7 +1271,7 @@ void showTime(bool showSeconds)
   {
     timeString += String(now.hour());
   }
-  if (showSeconds) timeString += String(":");
+  if (fullFormat) timeString += String(":");
   
   if (now.minute() < 10)
   {
@@ -1301,7 +1281,7 @@ void showTime(bool showSeconds)
   {
     timeString += String(now.minute());
   }
-  if (showSeconds)
+  if (fullFormat)
   {
     timeString += String(":");
 
@@ -1314,9 +1294,5 @@ void showTime(bool showSeconds)
       timeString += String(now.second());
     }
   }
-  uint16_t timeStringLength = timeString.length();
-  char timeChar[timeStringLength+1];
-  timeString.toCharArray(timeChar,timeStringLength+1);
-  printString5x7(timeChar, timeStringLength, (PIXELS_WIDTH - (timeStringLength*6))/2, (PIXELS_HEIGHT - 7)/2 );
-  
+  return timeString;
 }
