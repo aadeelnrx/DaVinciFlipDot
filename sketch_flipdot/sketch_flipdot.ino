@@ -590,13 +590,15 @@ void setup()
 #ifdef BME
   if (!bme.begin()) {
     Serial1.println("Could not find a valid BME280 sensor, check wiring!");
-//    while (1);
+    fillDisplay();
+    while (1);
   }
 #endif
 
 #ifdef RTC
   if (! rtc.begin()) {
     Serial1.println("Couldn't find RTC");
+    fillDisplay();
     while (1);
   }
 
@@ -644,24 +646,8 @@ void loop()
 #endif
 
 #ifdef BME
-  Serial1.print("Temperature = ");
-  Serial1.print(bme.readTemperature());
-  Serial1.println(" *C");
-
-  Serial1.print("Pressure = ");
-
-  Serial1.print(bme.readPressure() / 100.0F);
-  Serial1.println(" hPa");
-
-  Serial1.print("Approx. Altitude = ");
-  Serial1.print(bme.readAltitude(SEALEVELPRESSURE_HPA));
-  Serial1.println(" m");
-
-  Serial1.print("Humidity = ");
-  Serial1.print(bme.readHumidity());
-  Serial1.println(" %");
-
-  Serial1.println();
+  showTempHum();
+  delay(100000);
 #endif
 
 #ifdef TEST1_PIXEL_ON_OFF
@@ -1326,4 +1312,65 @@ String buildDate()
   return dateString;
 }
 
+//-------------------------------------------------------------------------------------------
+// Display Temperature and Humidity
+void showTempHum()
+{
+  Serial1.print("Temperature = ");
+  Serial1.print(bme.readTemperature());
+  Serial1.println(" *C");
+
+  Serial1.print("Pressure = ");
+
+  Serial1.print(bme.readPressure() / 100.0F);
+  Serial1.println(" hPa");
+
+  Serial1.print("Approx. Altitude = ");
+  Serial1.print(bme.readAltitude(SEALEVELPRESSURE_HPA));
+  Serial1.println(" m");
+
+  Serial1.print("Humidity = ");
+  Serial1.print(bme.readHumidity());
+  Serial1.println(" %");
+
+  Serial1.println();
+  
+  String tempHumString;
+  char tempHumChar[28*3];
+  tempHumString += "Temp = ";
+  tempHumString += String(bme.readTemperature());
+  tempHumString += " *C";
+//  char tempHumChar[tempHumString.length() + 1];
+  tempHumString.toCharArray(tempHumChar,tempHumString.length() + 1);
+  printString3x5(tempHumChar, tempHumString.length(), 1, 1 );
+  
+  tempHumString = "";
+  tempHumString += "Pres = ";
+  tempHumString += String(bme.readPressure() / 100.0F);
+  tempHumString += " hPa";
+//  char tempHumChar[tempHumString.length() + 1];
+  tempHumString.toCharArray(tempHumChar,tempHumString.length() + 1);
+  printString3x5(tempHumChar, tempHumString.length(), 1, 7 );
+  
+  tempHumString = "";
+  tempHumString += "Alt = ";
+  tempHumString += String(bme.readAltitude(SEALEVELPRESSURE_HPA));
+  tempHumString += " m";
+//  char tempHumChar[tempHumString.length() + 1];
+  tempHumString.toCharArray(tempHumChar,tempHumString.length() + 1);
+  printString3x5(tempHumChar, tempHumString.length(), 1, 13 );
+  
+  tempHumString = "";
+  tempHumString += "Hum = ";
+  tempHumString += String(bme.readHumidity());
+  tempHumString += " %";
+//  char tempHumChar[tempHumString.length() + 1];
+  tempHumString.toCharArray(tempHumChar,tempHumString.length() + 1);
+  printString3x5(tempHumChar, tempHumString.length(), 1, 19 );
+     
+//  char tempHumChar[tempHumString.length() + 1];
+//  tempHumString.toCharArray(tempHumChar,tempHumString.length() + 1);
+//  printString3x5(tempHumChar, tempHumString.length(), 1, 1 );
+//  printString5x7(tempHumChar, tempHumString.length(), 1, 10 );    
+}
 
