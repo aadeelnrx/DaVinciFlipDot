@@ -424,7 +424,7 @@ int printLetter3x5(char character, int x, int y)
 //  {
 //    character -= 'a' + 'A';
 //  }
-  character = toupper(character);
+//  character = toupper(character);
   uint8_t* letter = font3x5[character - '!' + 1];
     
   // Go through the 3 columns of the letter
