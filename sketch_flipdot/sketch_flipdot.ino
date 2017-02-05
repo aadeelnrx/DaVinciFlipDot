@@ -46,12 +46,14 @@
 //
 
 // BME280 Libraries
+// Requires:  Adafruit Unified Driver, Adafruit BME280
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
 
 // Date and time functions using a DS3231 RTC connected via I2C and Wire lib
+// Requires: Adafruit RTClib
 #include "RTClib.h"
 
 // BME280 Definitions
@@ -649,7 +651,7 @@ void loop()
 #endif
 
 #ifdef BME
-//  clearDisplay();
+  clearDisplay();
   showTempHum();
   delay(100000);
 #endif
@@ -1216,7 +1218,7 @@ void showDateTime(bool compressed)
   {
     printString5x7(dateChar, dateString.length(), (PIXELS_WIDTH - (dateString.length()*6) )/2, (PIXELS_HEIGHT - 15)/3 );    
   }
-  
+
   String timeString = buildTime(true);
   char timeChar[timeString.length() + 1];
   timeString.toCharArray(timeChar,timeString.length() + 1);
@@ -1232,7 +1234,14 @@ void showTime(bool compressed)
   timeString.toCharArray(timeChar,timeString.length() + 1);
   if (compressed)
   {
-    printString3x5(timeChar, timeString.length(), (PIXELS_WIDTH - (timeString.length()*4))/2, (PIXELS_HEIGHT - 5)/2 );
+ // printString3x5(timeChar, timeString.length(), (PIXELS_WIDTH - (timeString.length()*4))/2, (PIXELS_HEIGHT - 5)/2 );
+    setPixel( 9, (PIXELS_HEIGHT - 5)/2 + 1, true);  // hour/min separator, upper dot
+    setPixel( 9, (PIXELS_HEIGHT - 5)/2 + 3, true);  // hour/min separator, lower dot
+    setPixel(19, (PIXELS_HEIGHT - 5)/2 + 1, true);  // min/sec separator, upper dot
+    setPixel(19, (PIXELS_HEIGHT - 5)/2 + 3, true);  // min/sec separator, lower dot
+    printString3x5(timeChar,     2,  1, (PIXELS_HEIGHT - 5)/2 );  // hour
+    printString3x5(timeChar + 2, 2, 11, (PIXELS_HEIGHT - 5)/2 );  // minute
+    printString3x5(timeChar + 4, 2, 21, (PIXELS_HEIGHT - 5)/2 );  // second
   }else
   {
     printString5x7(timeChar, timeString.length(), (PIXELS_WIDTH - (timeString.length()*6))/2, (PIXELS_HEIGHT - 7)/2 );    
@@ -1313,6 +1322,7 @@ String buildDate()
   dateString += months[now.month()-1];
   dateString += " ";
   dateString += String(now.year());    
+  Serial1.println(dateString);
   return dateString;
 }
 
