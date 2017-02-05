@@ -62,7 +62,7 @@
 
 #define SEALEVELPRESSURE_HPA (1013.25)
 
-Adafruit_BME280 bme; // I2C
+Adafruit_BME280 bme; // I2C address changed to 0x76 in Adafruit_BME280.h
 //Adafruit_BME280 bme(BME_CS); // hardware SPI
 //Adafruit_BME280 bme(BME_CS, BME_MOSI, BME_MISO,  BME_SCK);
 
@@ -590,7 +590,8 @@ void setup()
 #ifdef BME
   if (!bme.begin()) {
     Serial1.println("Could not find a valid BME280 sensor, check wiring!");
-    fillDisplay();
+//    fillDisplay();
+    checkI2C();
     while (1);
   }
 #endif
@@ -598,7 +599,8 @@ void setup()
 #ifdef RTC
   if (! rtc.begin()) {
     Serial1.println("Couldn't find RTC");
-    fillDisplay();
+//    fillDisplay();
+    checkI2C();
     while (1);
   }
 
@@ -646,6 +648,7 @@ void loop()
 #endif
 
 #ifdef BME
+//  clearDisplay();
   showTempHum();
   delay(100000);
 #endif
@@ -1373,4 +1376,53 @@ void showTempHum()
 //  printString3x5(tempHumChar, tempHumString.length(), 1, 1 );
 //  printString5x7(tempHumChar, tempHumString.length(), 1, 10 );    
 }
+
+void checkI2C()
+{
+  byte error, address;
+  char addressChar[5];
+  String addressString;
+  int nDevices;
+     
+  Serial1.println("Scanning...");
+     
+  nDevices = 0;
+  for(address = 1; address < 127; address++ )
+  {
+    // The i2c_scanner uses the return value of
+    // the Write.endTransmisstion to see if
+    // a device did acknowledge to the address.
+    Wire.beginTransmission(address);
+    error = Wire.endTransmission();
+     
+    if (error == 0)
+    {
+      Serial1.print("I2C device found at address 0x");
+      if (address<16)
+        Serial1.print("0");
+      Serial1.print(address,HEX);
+      Serial1.println("  !");
+      addressString = (String) address;
+      addressString.toCharArray(addressChar,addressString.length()+1);
+      printString5x7(addressChar, addressString.length(), 1, (nDevices*8) );
+     
+      nDevices++;
+    }
+    else if (error==4)
+    {
+      Serial1.print("Unknow error at address 0x");
+      if (address<16)
+        Serial1.print("0");
+      Serial1.println(address,HEX);
+    }    
+  }
+  if (nDevices == 0)
+    Serial1.println("No I2C devices found\n");
+  else
+    Serial1.println("done\n");
+   
+  delay(5000);           // wait 5 seconds for next scan
+}
+
+
 
