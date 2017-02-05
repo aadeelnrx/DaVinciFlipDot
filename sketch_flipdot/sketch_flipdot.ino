@@ -55,6 +55,7 @@
 #include "RTClib.h"
 
 // BME280 Definitions
+#define BME280_ADDRESS                (0x76)
 //#define BME_SCK 13
 //#define BME_MISO 12
 //#define BME_MOSI 11
@@ -62,7 +63,7 @@
 
 #define SEALEVELPRESSURE_HPA (1013.25)
 
-Adafruit_BME280 bme; // I2C address changed to 0x76 in Adafruit_BME280.h
+Adafruit_BME280 bme; // I2C
 //Adafruit_BME280 bme(BME_CS); // hardware SPI
 //Adafruit_BME280 bme(BME_CS, BME_MOSI, BME_MISO,  BME_SCK);
 
@@ -588,7 +589,7 @@ void setup()
   clearDisplay();
   
 #ifdef BME
-  if (!bme.begin()) {
+  if (!bme.begin(BME280_ADDRESS)) {
     Serial1.println("Could not find a valid BME280 sensor, check wiring!");
 //    fillDisplay();
     checkI2C();
