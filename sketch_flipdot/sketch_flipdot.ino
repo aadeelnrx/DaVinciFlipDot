@@ -668,6 +668,7 @@ void loop()
 #endif
 
 #ifdef BME
+  if (bme_timer.check())
   {
     clearDisplay();
     showTempHum();
