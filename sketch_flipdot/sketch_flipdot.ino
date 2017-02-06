@@ -49,6 +49,7 @@
 // Requires:  Adafruit Unified Driver, Adafruit BME280
 #include <Wire.h>
 #include <SPI.h>
+#include <Metro.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
 
@@ -85,6 +86,9 @@ char months[12][4] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "S
 #define PIXELS_HEIGHT PANEL_HEIGHT
 
 #define LED_PIN         13
+#define CLOCK_INTERVAL     1000 // mills between clock uodates
+#define BME_INTERVAL      60000 // mills between BME updates
+#define WIFI_INTERVAL        10 // mills between WIFI updates
 
 #define BME
 #define RTC
@@ -95,6 +99,12 @@ char months[12][4] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "S
 //#define TEST7_LETTERS
 //#define TEST8_LAPCOUNTER
 #define TEST9_SERIAL
+
+// Timers that control the update rates of various things in the main loop:
+// Units are milliseconds.
+Metro clock_timer = Metro(CLOCK_INTERVAL);
+Metro bme_timer = Metro(BME_INTERVAL);
+Metro wifi_timer = Metro(WIFI_INTERVAL);
 
 char pixels[PANEL_WIDTH*PANEL_NUMBER][PANEL_HEIGHT];
 int px, py;
@@ -623,6 +633,11 @@ void setup()
   printHelp();
 #endif
 
+  // Reset metro timers so we start at 0
+  clock_timer.reset();
+  bme_timer.reset();
+  wifi_timer.reset();
+
 }
 
 
@@ -634,26 +649,29 @@ void loop()
   // put your main code here, to run repeatedly:
 
 #ifdef RTC
-  if (PANEL_NUMBER > 3)
+  if (clock_timer.check())
   {
-    showDateTime(false);
-  }else if (PANEL_NUMBER > 2)
-  {
-    showDateTime(true);
-  }else if (PANEL_NUMBER > 1)
-  { 
-    showTime(false);    
-  }else
-  {
-    showTime(true); 
+    if (PANEL_NUMBER > 3)
+    {
+      showDateTime(false);
+    }else if (PANEL_NUMBER > 2)
+    {
+      showDateTime(true);
+    }else if (PANEL_NUMBER > 1)
+    { 
+      showTime(false);    
+    }else
+    {
+      showTime(true); 
+    }
   }
-  delay(1000);
 #endif
 
 #ifdef BME
-  clearDisplay();
-  showTempHum();
-  delay(100000);
+  {
+    clearDisplay();
+    showTempHum();
+  }
 #endif
 
 #ifdef TEST1_PIXEL_ON_OFF
