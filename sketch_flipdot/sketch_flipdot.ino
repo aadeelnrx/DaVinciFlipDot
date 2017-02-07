@@ -670,7 +670,7 @@ void loop()
 #ifdef BME
   if (bme_timer.check())
   {
-    clearDisplay();
+//    clearDisplay();
     showTempHum();
   }
 #endif
@@ -1232,7 +1232,8 @@ void showDateTime(bool compressed)
   dateString.toCharArray(dateChar,dateString.length() + 1);
   if (compressed)
   {
-    printString3x5(dateChar, dateString.length(), (PIXELS_WIDTH - (dateString.length()*4) )/2, (PIXELS_HEIGHT - 15)/3 );
+//    printString3x5(dateChar, dateString.length(), (PIXELS_WIDTH - (dateString.length()*4) )/2, (PIXELS_HEIGHT - 15)/3 );
+    printString3x5(dateChar, dateString.length(), (PIXELS_WIDTH - (dateString.length()*4) )/2, 1 );
   }else
   {
     printString5x7(dateChar, dateString.length(), (PIXELS_WIDTH - (dateString.length()*6) )/2, (PIXELS_HEIGHT - 15)/3 );    
@@ -1241,7 +1242,8 @@ void showDateTime(bool compressed)
   String timeString = buildTime(true);
   char timeChar[timeString.length() + 1];
   timeString.toCharArray(timeChar,timeString.length() + 1);
-  printString5x7(timeChar, timeString.length(), (PIXELS_WIDTH - (timeString.length()*6))/2, (PIXELS_HEIGHT - 15)/3*2 + 8 );
+//  printString5x7(timeChar, timeString.length(), (PIXELS_WIDTH - (timeString.length()*6))/2, (PIXELS_HEIGHT - 15)/3*2 + 8 );
+  printString5x7(timeChar, timeString.length(), (PIXELS_WIDTH - (timeString.length()*6))/2, (PIXELS_HEIGHT/2) - 4 );
 }
 
 //-------------------------------------------------------------------------------------------
@@ -1370,6 +1372,20 @@ void showTempHum()
   
   String tempHumString;
   char tempHumChar[28*3];
+
+#ifdef RTC
+  tempHumString += String(bme.readTemperature());
+  tempHumString += "*C";
+
+  tempHumString += String(bme.readHumidity());
+  tempHumString += "%";
+
+  tempHumString += String(bme.readPressure() / 100.0F);
+  tempHumString += "hPa";
+
+  tempHumString.toCharArray(tempHumChar,tempHumString.length() + 1);
+  printString3x5(tempHumChar, tempHumString.length(), 1, 18 );     
+#else
   tempHumString += "Temp = ";
   tempHumString += String(bme.readTemperature());
   tempHumString += " *C";
@@ -1400,11 +1416,7 @@ void showTempHum()
 //  char tempHumChar[tempHumString.length() + 1];
   tempHumString.toCharArray(tempHumChar,tempHumString.length() + 1);
   printString3x5(tempHumChar, tempHumString.length(), 1, 19 );
-     
-//  char tempHumChar[tempHumString.length() + 1];
-//  tempHumString.toCharArray(tempHumChar,tempHumString.length() + 1);
-//  printString3x5(tempHumChar, tempHumString.length(), 1, 1 );
-//  printString5x7(tempHumChar, tempHumString.length(), 1, 10 );    
+#endif 
 }
 
 void checkI2C()
