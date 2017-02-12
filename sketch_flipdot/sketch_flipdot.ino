@@ -45,6 +45,11 @@
 //   DS3231 connected to pin 43/44, digital in/out 20/21, the I2C bus
 //
 
+#define BME
+#define RTC
+#define DS18B20
+
+//---------------------------------------------------------------------------
 // BME280 Libraries
 // Requires:  Adafruit Unified Driver, Adafruit BME280
 #include <Wire.h>
@@ -53,12 +58,8 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
 
-// Date and time functions using a DS3231 RTC connected via I2C and Wire lib
-// Requires: Adafruit RTClib
-#include "RTClib.h"
-
 // BME280 Definitions
-#define BME280_ADDRESS                (0x76)
+#define BME280_ADDRESS  (0x76)
 //#define BME_SCK 13
 //#define BME_MISO 12
 //#define BME_MOSI 11
@@ -70,7 +71,11 @@ Adafruit_BME280 bme; // I2C
 //Adafruit_BME280 bme(BME_CS); // hardware SPI
 //Adafruit_BME280 bme(BME_CS, BME_MOSI, BME_MISO,  BME_SCK);
 
+//---------------------------------------------------------------------------
 // DS3231 Definitions
+// Date and time functions using a DS3231 RTC connected via I2C and Wire lib
+// Requires: Adafruit RTClib
+#include "RTClib.h"
 RTC_DS3231 rtc;
 
 //char daysOfTheWeek[7][10] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
@@ -78,6 +83,25 @@ RTC_DS3231 rtc;
 char daysOfTheWeek[7][4] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 char months[12][4] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
+//---------------------------------------------------------------------------
+// DS18B20 Temperature sensor
+// Requires:  OneWire by Jim Studt
+// Requires:  DallasTemperature
+#ifdef DS18B20
+#include <OneWire.h> 
+#include <DallasTemperature.h>
+
+// DS1820B data wire is plugged into port 2 on the Arduino
+#define ONE_WIRE_BUS 6
+
+// Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
+OneWire oneWire(ONE_WIRE_BUS);
+
+// Pass our oneWire reference to Dallas Temperature.
+DallasTemperature ds18b20(&oneWire);
+#endif
+
+//------------------------------------------------------------------------------
 // Panel Definitions
 #define PANEL_WIDTH     28 // single Panel width in pixel
 #define PANEL_HEIGHT    24 // single Panel height in pixel
@@ -90,8 +114,7 @@ char months[12][4] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "S
 #define BME_INTERVAL      60000 // mills between BME updates
 #define WIFI_INTERVAL        10 // mills between WIFI updates
 
-#define BME
-#define RTC
+
 //#define TEST2_ALL_ON_OFF
 //#define TEST3_RANDOM_PIXELS
 //#define TEST4_BOUNCING_BALL
@@ -629,6 +652,11 @@ void setup()
   }
 #endif
 
+#ifdef DS18B20
+  // DS18B20
+  ds18b20.begin();
+#endif
+
   Serial1.write("Ready.\r\n");
   
 #ifdef TEST9_SERIAL
@@ -1067,6 +1095,13 @@ void handle_command()
   }
 
   //------------------------------------------
+  // I  = Scan I2C bus and print the devices found
+  else if (cmd_buffer[0] == 'I')
+  {
+    checkI2C();
+  }
+  
+  //------------------------------------------
   // p<x>,<y>  = Set Pixel at x1,y1
   // C
   // p0,0
@@ -1189,6 +1224,21 @@ void handle_command()
       }
     }
   }
+  //----------------------------------------------
+  // w  = Print DS18B20 Temperature at current position and font
+  else if (cmd_buffer[0] == 'w')
+  {
+#ifdef DS18B20
+    ds18b20.requestTemperatures();
+    float temp = ds18b20.getTempCByIndex(0);
+    Serial1.print("Temperature 18B20: ");
+    Serial1.print(temp);
+    Serial1.println(" *C");
+#endif
+#ifdef BME
+    showTempHum();
+#endif
+  }
   Serial1.println();
 }
 
@@ -1222,12 +1272,14 @@ void printHelp()
     Serial1.println("f<x1>,<y1>,<x2>,<y2>  = Fill Rectangle Area");
     Serial1.println("F<x1>,<y1>,<x2>,<y2>  = Erase Rectangle Area");
     Serial1.println("g<x>,<y>              = GotoXY");
+    Serial1.println("I                     = Scan I2C bus and print devices");
     Serial1.println("p<x>,<y>              = Set Pixel at x1,y1");
     Serial1.println("P<x>,<y>              = Clear Pixel at x1,y1");
     Serial1.println("r<x1>,<y1>,<x2>,<y2>  = Draw Rectangle (not filled)");
     Serial1.println("R<x1>,<y1>,<x2>,<y2>  = Erase Rectangle (not filled)");
     Serial1.println("s<fontID>             = Set Font ID (3 = 3x5, 5 = 5x7)");
     Serial1.println("t<string>             = Text at the current cursor position, use current font");
+    Serial1.println("w                     = Print temperature at cursor position, use current font");
     Serial1.println();
 }
 
@@ -1428,6 +1480,9 @@ void showTempHum()
 #endif 
 }
 
+
+//----------------------------------------------------------------------
+// Scan the I2C bus and print the devices that were found
 void checkI2C()
 {
   byte error, address;
@@ -1453,9 +1508,9 @@ void checkI2C()
         Serial1.print("0");
       Serial1.print(address,HEX);
       Serial1.println("  !");
-      addressString = (String) address;
-      addressString.toCharArray(addressChar,addressString.length()+1);
-      printString5x7(addressChar, addressString.length(), 1, (nDevices*8) );
+//      addressString = (String) address;
+//      addressString.toCharArray(addressChar,addressString.length()+1);
+//      printString5x7(addressChar, addressString.length(), 1, (nDevices*8) );
      
       nDevices++;
     }
@@ -1472,7 +1527,7 @@ void checkI2C()
   else
     Serial1.println("done\n");
    
-  delay(5000);           // wait 5 seconds for next scan
+  //delay(5000);           // wait 5 seconds for next scan
 }
 
 
