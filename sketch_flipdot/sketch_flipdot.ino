@@ -102,6 +102,8 @@ char months[12][4] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "S
 
 // Timers that control the update rates of various things in the main loop:
 // Units are milliseconds.
+// Install from zip file:
+// https://github.com/thomasfredericks/Metro-Arduino-Wiring/archive/master.zip
 Metro clock_timer = Metro(CLOCK_INTERVAL);
 Metro bme_timer = Metro(BME_INTERVAL);
 Metro wifi_timer = Metro(WIFI_INTERVAL);
@@ -900,7 +902,13 @@ void loop()
   while (Serial1.available())
   {
     cmd_buffer[cmd_buffer_index] = Serial1.read();
-    Serial1.write(cmd_buffer[cmd_buffer_index]);
+
+    // Sometimes we get a null-byte --> ignore it
+    if (cmd_buffer[cmd_buffer_index] == 0)
+    {
+      break;
+    }
+
     // Empty line?
     if (((cmd_buffer[cmd_buffer_index] == '\n') || (cmd_buffer[cmd_buffer_index] == '\r'))
        && (cmd_buffer_index == 0))
@@ -933,6 +941,8 @@ void loop()
 // comd_buffer_index characters
 void handle_command()
 {
+  cmd_buffer[cmd_buffer_index] = '\0';  // make sure we have a null-byte
+
   //-----------------------------------------
   if (cmd_buffer[0] == '?')
   {
@@ -1194,8 +1204,7 @@ int readNumber(int *index)
     number = 10 * number + cmd_buffer[*index] - '0';
     (*index)++;
   }
-  Serial1.print("ReadNumber returns ");
-  Serial1.println(number); 
+ 
   return number;
 }
 
@@ -1273,12 +1282,12 @@ String buildTime(bool seperator)
 {
   DateTime now = rtc.now();
 
-  Serial1.print(now.hour(), DEC);
-  Serial1.print(':');
-  Serial1.print(now.minute(), DEC);
-  Serial1.print(':');
-  Serial1.print(now.second(), DEC);
-  Serial1.println();
+//  Serial1.print(now.hour(), DEC);
+//  Serial1.print(':');
+//  Serial1.print(now.minute(), DEC);
+//  Serial1.print(':');
+//  Serial1.print(now.second(), DEC);
+//  Serial1.println();
 
   String timeString;
   if (now.hour() < 10)
