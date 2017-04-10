@@ -62,13 +62,14 @@ String buildTime(bool seperator)
 //  Serial1.println();
 
   String timeString;
+  DST = checkDST();
   if (now.hour() < 10)
   {
     timeString += "0";
-    timeString += String(now.hour());
+    timeString += String(now.hour() + DST);
   }else
   {
-    timeString += String(now.hour());
+    timeString += String(now.hour() + DST);
   }
   if (seperator) timeString += String(":");
   
@@ -128,6 +129,35 @@ String buildDate()
 
 
 //-------------------------------------------------------------------------------------------
+// Check Daylight Savings Time
+bool checkDST()
+{
+  DateTime now = rtc.now();
+
+  if (now.month()>3 && now.month()<10)
+  {
+    return true;
+  }
+  if (now.month() == 10 && now.day() < 25)
+  {
+    return true;
+  }
+  
+//  if (now.dayOfTheWeek() == 7 && mo == 10 && d >= 25 && d <=31 && h == 3 && DST==1)
+//  {
+//    setclockto 2 am;
+//    DST=0;
+//  }
+//
+//  if (dow == 7 && mo == 3 && d >= 25 && d <=31 && h ==2 && DST==0)
+//  {
+//    setclockto 3 am;
+//    DST=1;
+//  }
+  return false;
+}
+
+//-------------------------------------------------------------------------------------------
 // Display Time, Temperature, Humidity, optimized for a single panel
 void showTimeTempHum()
 {
@@ -135,8 +165,13 @@ void showTimeTempHum()
   char hum[30];
   String hhmm;
 
+#ifdef DS18B20
   float tempF = ds18b20.getTempCByIndex(0);
   dtostrf(tempF, 4, 1, temp);
+#else
+  dtostrf(bme.readTemperature(), 4 , 1, temp);
+#endif
+
   dtostrf(bme.readHumidity(), 2, 0, hum);
   hhmm = buildTime(true);
   Serial1.println(temp);

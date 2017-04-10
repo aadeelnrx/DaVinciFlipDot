@@ -80,6 +80,7 @@ Adafruit_BME280 bme; // I2C
 // Requires: Adafruit RTClib
 #include "RTClib.h"
 RTC_DS3231 rtc;
+bool DST = false;
 
 //char daysOfTheWeek[7][10] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
 //char months[12][10] = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
