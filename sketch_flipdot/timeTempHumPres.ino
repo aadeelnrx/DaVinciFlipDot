@@ -63,7 +63,7 @@ String buildTime(bool seperator)
 
   String timeString;
   DST = checkDST();
-  if (now.hour() < 10)
+  if ((now.hour() + DST) < 10)
   {
     timeString += "0";
     timeString += String(now.hour() + DST);
@@ -118,6 +118,9 @@ String buildDate()
   String dateString;
   dateString += daysOfTheWeek[now.dayOfTheWeek()];
   dateString += " ";
+  if (now.day()<10){
+    dateString += " ";    
+  }
   dateString += String(now.day());
   dateString += " ";
   dateString += months[now.month()-1];
