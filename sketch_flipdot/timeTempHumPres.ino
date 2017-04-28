@@ -164,62 +164,64 @@ bool checkDST()
 // Display Time, Temperature, Humidity, optimized for a single panel
 void showTimeTempHum()
 {
-  char temp[30];
-  char hum[30];
-  String hhmm;
+  if (PANEL_NUMBER == 1)
+  {
+    char temp[30];
+    char hum[30];
+    String hhmm;
 
 #ifdef DS18B20
-  float tempF = ds18b20.getTempCByIndex(0);
-  dtostrf(tempF, 4, 1, temp);
+    float tempF = ds18b20.getTempCByIndex(0);
+    dtostrf(tempF, 4, 1, temp);
 #else
-  dtostrf(bme.readTemperature(), 4 , 1, temp);
+    dtostrf(bme.readTemperature(), 4 , 1, temp);
 #endif
 
-  dtostrf(bme.readHumidity(), 2, 0, hum);
-  hhmm = buildTime(true);
-  Serial1.println(temp);
-  Serial1.println(hum);
-  Serial1.println(hhmm);
+    dtostrf(bme.readHumidity(), 2, 0, hum);
+    hhmm = buildTime(true);
+    Serial1.println(temp);
+    Serial1.println(hum);
+    Serial1.println(hhmm);
 
 #ifdef ALEX
-  // Temp, Big letters
-  int y = 0;
-  printLetter5x7(temp[0], 0, y);
-  printLetter5x7(temp[1], 6, y);
-  setPixel(12, y+6, true);
-  printLetter5x7(temp[3], 14, y);
+    // Temp, Big letters
+    int y = 0;
+    printLetter5x7(temp[0], 0, y);
+    printLetter5x7(temp[1], 6, y);
+    setPixel(12, y+6, true);
+    printLetter5x7(temp[3], 14, y);
 
-  setPixel(21, y+0, true);
-  setPixel(22, y+0, true);
-  setPixel(21, y+1, true);
-  setPixel(22, y+1, true);
-  printLetter3x5('C', 24, y);
+    setPixel(21, y+0, true);
+    setPixel(22, y+0, true);
+    setPixel(21, y+1, true);
+    setPixel(22, y+1, true);
+    printLetter3x5('C', 24, y);
 
-  // Temp. Small letters
-  y = 19;
-  printLetter3x5(temp[0], 0, y);
-  printLetter3x5(temp[1], 4, y);
-  setPixel(8, y+4, true);
-  printLetter3x5(temp[3], 10, y);
-  setPixel(15, y+0, true);
-  setPixel(16, y+0, true);
-  setPixel(15, y+1, true);
-  setPixel(16, y+1, true);
-  printLetter3x5('C', 18, y);
+    // Temp. Small letters
+    y = 19;
+    printLetter3x5(temp[0], 0, y);
+    printLetter3x5(temp[1], 4, y);
+    setPixel(8, y+4, true);
+    printLetter3x5(temp[3], 10, y);
+    setPixel(15, y+0, true);
+    setPixel(16, y+0, true);
+    setPixel(15, y+1, true);
+    setPixel(16, y+1, true);
+    printLetter3x5('C', 18, y);
 #endif
 
-  // Humidity, Big letters
-  int y = 0;
-  printLetter5x7(hum[0], 0, y);
-  printLetter5x7(hum[1], 6, y);
-  printLetter5x7('%', 13, y);
+    // Humidity, Big letters
+    int y = 0;
+    printLetter5x7(hum[0], 0, y);
+    printLetter5x7(hum[1], 6, y);
+    printLetter5x7('%', 13, y);
 
-  // Humidity. Small letters
-  y = 19;
-  printLetter3x5(hum[0], 0, y);
-  printLetter3x5(hum[1], 4, y);
-  printLetter3x5('%', 9, y);
-  
+    // Humidity. Small letters
+    y = 19;
+    printLetter3x5(hum[0], 0, y);
+    printLetter3x5(hum[1], 4, y);
+    printLetter3x5('%', 9, y);
+  }
 }
 
 //-------------------------------------------------------------------------------------------
