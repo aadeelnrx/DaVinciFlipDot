@@ -12,7 +12,9 @@ void showDateTime(bool compressed)
   if (compressed)
   {
 //    printString3x5(dateChar, dateString.length(), (PIXELS_WIDTH - (dateString.length()*4) )/2, (PIXELS_HEIGHT - 15)/3 );
-    printString3x5(dateChar, dateString.length(), (PIXELS_WIDTH - (dateString.length()*4) )/2, 1 );
+    if (dateString.length()<16){
+      printString3x5(dateChar, dateString.length(), (PIXELS_WIDTH - (dateString.length()*4) )/2, 1 );
+    }
   }else
   {
     printString5x7(dateChar, dateString.length(), (PIXELS_WIDTH - (dateString.length()*6) )/2, (PIXELS_HEIGHT - 15)/3 );    
@@ -99,7 +101,7 @@ String buildTime(bool seperator)
 String buildDate()
 {
   DateTime now = rtc.now();
-    
+
   Serial1.print(now.year(), DEC);
   Serial1.print('/');
   Serial1.print(now.month(), DEC);
@@ -116,16 +118,36 @@ String buildDate()
   Serial1.println();
 
   String dateString;
-  dateString += daysOfTheWeek[now.dayOfTheWeek()];
-  dateString += " ";
-  if (now.day()<10){
-    dateString += " ";    
+  if (isnan(now.dayOfTheWeek()) && (now.dayOfTheWeek()<7)){
+    dateString += "NaN";      
+  } else {
+    dateString += daysOfTheWeek[now.dayOfTheWeek()];
   }
-  dateString += String(now.day());
   dateString += " ";
-  dateString += months[now.month()-1];
+
+  if (isnan(now.day())){
+    dateString += "NaN";          
+  }else{
+    if (now.day()<10){
+      dateString += " ";    
+    }
+    dateString += String(now.day());
+  }
   dateString += " ";
-  dateString += String(now.year());    
+
+  if (isnan(now.month())){
+    dateString += "NaN";          
+  }else{
+    dateString += months[now.month()-1];
+  }
+  dateString += " ";
+  
+  if (isnan(now.year())){
+    dateString += "NaN";          
+  }else{
+    dateString += String(now.year());  
+  }
+    
   Serial1.println(dateString);
   return dateString;
 }
@@ -137,15 +159,53 @@ bool checkDST()
 {
   DateTime now = rtc.now();
 
+  if (now.month()<3 || now.month()>10)
+  {
+    return false;
+  }
   if (now.month()>3 && now.month()<10)
   {
     return true;
   }
-  if (now.month() == 10 && now.day() < 25)
+  if (now.month() == 10)
   {
-    return true;
+    if (now.day() < lastSundayOfMonth(now.year(), now.month()))
+    {
+      return true;
+    }
+    else if (now.day() > lastSundayOfMonth(now.year(), now.month()))
+    {
+      return false;
+    }
+    else if (now.hour() < 3)
+    {
+      return true;
+    }
+    else
+    {
+      return false;
+    }
   }
-  
+  if (now.month() == 3)
+  {
+    if (now.day() < lastSundayOfMonth(now.year(), now.month()))
+    {
+      return false;
+    }
+    else if (now.day() > lastSundayOfMonth(now.year(), now.month()))
+    {
+      return true;
+    }
+    else if (now.hour() > 2)
+    {
+      return true;
+    }
+    else
+    {
+      return false;
+    }
+  }
+    
 //  if (now.dayOfTheWeek() == 7 && mo == 10 && d >= 25 && d <=31 && h == 3 && DST==1)
 //  {
 //    setclockto 2 am;
@@ -160,6 +220,16 @@ bool checkDST()
   return false;
 }
 
+int lastSundayOfMonth(int year,int month)
+{
+  int days[] = {31,29,31,30,31,30,31,31,30,31,30,31};
+  int d;
+
+  days[1] -= (year % 4) || (!(year % 100) && (year % 400));
+
+  d = days[month - 1];
+  return days[month-1] - ((d += month < 3 ? year-- : year - 2, 23*month/9 + d + 4 + year/4- year/100 + year/400)%7);
+ }
 //-------------------------------------------------------------------------------------------
 // Display Time, Temperature, Humidity, optimized for a single panel
 void showTimeTempHum()
@@ -247,18 +317,50 @@ void showTempHum()
 
   Serial1.println();
   
-  String tempHumString;
+  String tempHumString = " ";
   char tempHumChar[28*3];
 
 #ifdef RTC
-  tempHumString += String(bme.readTemperature());
-  tempHumString += "*C";
+//  tempHumString += String(bme.readTemperature()- 1);
+  if (isnan(bme.readTemperature()))
+  {
+    tempHumString += "Na.Na";
+  }else
+  {
+    tempHumString += String(bme.readTemperature()-1);
+  }
+//  String tempString = String(bme.readTemperature());
+//  if (tempString[2] /= '.')
+//  {
+//    tempString.setCharAt(2, '. ');
+//  }
+//  tempHumString += tempString;
+  int lastIndex = tempHumString.length() - 1;
+  tempHumString.remove(lastIndex);
+  tempHumString += "*C ";
 
-  tempHumString += String(bme.readHumidity());
-  tempHumString += "%";
+//  tempHumString += String(bme.readHumidity());
+  if (isnan(bme.readHumidity()))
+  {
+    tempHumString += "Na.Na";
+  }else
+  {
+    tempHumString += String(bme.readHumidity());
+  }
+//  String humString = String(bme.readHumidity());
+//  if (humString[2] /= '.')
+//  {
+//    humString.setCharAt(2, '.');
+//  }
+//  tempHumString += humString;
+  lastIndex = tempHumString.length() - 1;
+  tempHumString.remove(lastIndex);
+  tempHumString += "% ";
 
   tempHumString += String(bme.readPressure() / 100.0F);
-  tempHumString += "hPa";
+  lastIndex = tempHumString.length() - 3;
+  tempHumString.remove(lastIndex);
+  tempHumString += "hPa ";
 
   tempHumString.toCharArray(tempHumChar,tempHumString.length() + 1);
   printString3x5(tempHumChar, tempHumString.length(), 1, 18 );     
@@ -295,5 +397,3 @@ void showTempHum()
   printString3x5(tempHumChar, tempHumString.length(), 1, 19 );
 #endif 
 }
-
-
