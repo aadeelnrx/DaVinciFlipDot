@@ -57,8 +57,11 @@
 // Requires:  Adafruit Unified Driver, Adafruit BME280
 #include <Wire.h>
 #include <SPI.h>
+//https://github.com/thomasfredericks/Metro-Arduino-Wiring
 #include <Metro.h>
+//https://github.com/adafruit/Adafruit_Sensor
 #include <Adafruit_Sensor.h>
+//https://github.com/adafruit/Adafruit_BME280_Library
 #include <Adafruit_BME280.h>
 
 // BME280 Definitions
@@ -109,7 +112,7 @@ DallasTemperature ds18b20(&oneWire);
 // Panel Definitions
 #define PANEL_WIDTH     28 // single Panel width in pixel
 #define PANEL_HEIGHT    24 // single Panel height in pixel
-#define PANEL_NUMBER     1 // Number of connected Panels
+#define PANEL_NUMBER     3 // Number of connected Panels
 #define PIXELS_WIDTH (PANEL_WIDTH * PANEL_NUMBER)
 #define PIXELS_HEIGHT PANEL_HEIGHT
 
@@ -212,6 +215,7 @@ void setup()
     // This line sets the RTC with an explicit date & time, for example to set
     // January 21, 2014 at 3am you would call:
     // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
+    // rtc.adjust(DateTime(2023, 10, 3, 16, 7, 0));
   }
 #endif
 
@@ -388,6 +392,5 @@ void checkI2C()
    
   //delay(5000);           // wait 5 seconds for next scan
 }
-
 
 
